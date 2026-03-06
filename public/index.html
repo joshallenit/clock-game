@@ -268,7 +268,7 @@
     }
 
     function getTimeLimitMs() {
-      return 60000 * Math.pow(0.9, score);
+      return Math.max(5000, 45000 - score * 5000);
     }
 
     function startTimer() {
@@ -320,7 +320,9 @@
 
     function generateRandomTime() {
       targetHours = Math.floor(Math.random() * 12) + 1;
-      targetMinutes = Math.floor(Math.random() * 12) * 5;
+      targetMinutes = score >= 7
+        ? Math.floor(Math.random() * 60)
+        : Math.floor(Math.random() * 12) * 5;
       drawClock();
       startTimer();
     }
