@@ -56,6 +56,13 @@
       font-size: 20px;
       min-height: 28px;
     }
+    #timer {
+      font-size: 28px;
+      font-weight: bold;
+      font-variant-numeric: tabular-nums;
+    }
+    #timer.warning { color: #f59e0b; }
+    #timer.critical { color: #e63946; }
     .correct { color: #4ade80; }
     .incorrect { color: #e63946; }
   </style>
@@ -67,6 +74,7 @@
       <input type="text" id="answer" placeholder="7:30">
       <button id="submit-btn">Submit</button>
     </div>
+    <div id="timer">1:00</div>
     <div id="score">Score: 0</div>
     <div id="feedback"></div>
   </div>
@@ -81,15 +89,62 @@
     const submitBtn = document.getElementById("submit-btn");
     const scoreDisplay = document.getElementById("score");
     const feedbackDisplay = document.getElementById("feedback");
+    const timerDisplay = document.getElementById("timer");
 
     let targetHours = 0;
     let targetMinutes = 0;
     let score = 0;
+    let timerInterval = null;
+    let remainingMs = 0;
+
+    function getTimeLimitMs() {
+      return 60000 * Math.pow(0.9, score);
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      remainingMs = getTimeLimitMs();
+      updateTimerDisplay();
+      timerInterval = setInterval(function() {
+        remainingMs -= 100;
+        if (remainingMs <= 0) {
+          remainingMs = 0;
+          clearInterval(timerInterval);
+          handleTimeout();
+        }
+        updateTimerDisplay();
+      }, 100);
+    }
+
+    function updateTimerDisplay() {
+      const totalSecs = Math.ceil(remainingMs / 1000);
+      const mins = Math.floor(totalSecs / 60);
+      const secs = totalSecs % 60;
+      timerDisplay.textContent = mins + ":" + String(secs).padStart(2, "0");
+      const limitMs = getTimeLimitMs();
+      const fraction = remainingMs / limitMs;
+      if (fraction <= 0.25) {
+        timerDisplay.className = "critical";
+      } else if (fraction <= 0.5) {
+        timerDisplay.className = "warning";
+      } else {
+        timerDisplay.className = "";
+      }
+    }
+
+    function handleTimeout() {
+      const correctAnswer = formatTime(targetHours, targetMinutes);
+      feedbackDisplay.textContent = "Time's up! It was " + correctAnswer;
+      feedbackDisplay.className = "incorrect";
+      answerInput.value = "";
+      generateRandomTime();
+    }
 
     function generateRandomTime() {
       targetHours = Math.floor(Math.random() * 12) + 1;
       targetMinutes = Math.floor(Math.random() * 12) * 5;
       drawClock();
+      startTimer();
     }
 
     function drawClock() {
