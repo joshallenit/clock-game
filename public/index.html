@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clock Game</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #1a1a2e;
+      font-family: sans-serif;
+      color: #e2e2e2;
+    }
+    canvas { display: block; }
+    #controls {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    #input-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    #answer {
+      padding: 10px 14px;
+      font-size: 20px;
+      border: 2px solid #e2e2e2;
+      border-radius: 6px;
+      background: #16213e;
+      color: #e2e2e2;
+      text-align: center;
+      width: 120px;
+    }
+    #answer::placeholder { color: #666; }
+    #submit-btn {
+      padding: 10px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 6px;
+      background: #a2d2ff;
+      color: #1a1a2e;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    #submit-btn:hover { background: #81bfff; }
+    #score { font-size: 22px; font-weight: bold; }
+    #feedback {
+      font-size: 20px;
+      min-height: 28px;
+    }
+    .correct { color: #4ade80; }
+    .incorrect { color: #e63946; }
+  </style>
+</head>
+<body>
+  <canvas id="clock" width="500" height="500"></canvas>
+  <div id="controls">
+    <div id="input-row">
+      <input type="text" id="answer" placeholder="7:30">
+      <button id="submit-btn">Submit</button>
+    </div>
+    <div id="score">Score: 0</div>
+    <div id="feedback"></div>
+  </div>
+  <script>
+    const canvas = document.getElementById("clock");
+    const ctx = canvas.getContext("2d");
+    const size = canvas.width;
+    const center = size / 2;
+    const radius = center - 20;
+
+    const answerInput = document.getElementById("answer");
+    const submitBtn = document.getElementById("submit-btn");
+    const scoreDisplay = document.getElementById("score");
+    const feedbackDisplay = document.getElementById("feedback");
+
+    let targetHours = 0;
+    let targetMinutes = 0;
+    let score = 0;
+
+    function generateRandomTime() {
+      targetHours = Math.floor(Math.random() * 12) + 1;
+      targetMinutes = Math.floor(Math.random() * 12) * 5;
+      drawClock();
+    }
+
+    function drawClock() {
+      ctx.clearRect(0, 0, size, size);
+
+      // Face
+      ctx.beginPath();
+      ctx.arc(center, center, radius, 0, Math.PI * 2);
+      ctx.fillStyle = "#16213e";
+      ctx.fill();
+      ctx.strokeStyle = "#e2e2e2";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Hour markers
+      for (let i = 0; i < 12; i++) {
+        const angle = (i * Math.PI) / 6 - Math.PI / 2;
+        const inner = radius - 25;
+        const outer = radius - 8;
+        ctx.beginPath();
+        ctx.moveTo(center + inner * Math.cos(angle), center + inner * Math.sin(angle));
+        ctx.lineTo(center + outer * Math.cos(angle), center + outer * Math.sin(angle));
+        ctx.strokeStyle = "#e2e2e2";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+
+      // Minute markers
+      for (let i = 0; i < 60; i++) {
+        if (i % 5 === 0) continue;
+        const angle = (i * Math.PI) / 30 - Math.PI / 2;
+        const inner = radius - 12;
+        const outer = radius - 8;
+        ctx.beginPath();
+        ctx.moveTo(center + inner * Math.cos(angle), center + inner * Math.sin(angle));
+        ctx.lineTo(center + outer * Math.cos(angle), center + outer * Math.sin(angle));
+        ctx.strokeStyle = "#555";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // Hour numbers
+      ctx.fillStyle = "#e2e2e2";
+      ctx.font = "bold 24px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      for (let i = 1; i <= 12; i++) {
+        const angle = (i * Math.PI) / 6 - Math.PI / 2;
+        const numRadius = radius - 45;
+        ctx.fillText(i, center + numRadius * Math.cos(angle), center + numRadius * Math.sin(angle));
+      }
+
+      // Hour hand
+      const hourAngle = ((targetHours % 12 + targetMinutes / 60) * Math.PI) / 6 - Math.PI / 2;
+      drawHand(hourAngle, radius * 0.5, 6, "#e2e2e2");
+
+      // Minute hand
+      const minuteAngle = (targetMinutes * Math.PI) / 30 - Math.PI / 2;
+      drawHand(minuteAngle, radius * 0.7, 4, "#a2d2ff");
+
+      // Center dot
+      ctx.beginPath();
+      ctx.arc(center, center, 6, 0, Math.PI * 2);
+      ctx.fillStyle = "#a2d2ff";
+      ctx.fill();
+    }
+
+    function drawHand(angle, length, width, color) {
+      ctx.beginPath();
+      ctx.moveTo(center, center);
+      ctx.lineTo(center + length * Math.cos(angle), center + length * Math.sin(angle));
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineCap = "round";
+      ctx.stroke();
+    }
+
+    function formatTime(h, m) {
+      return h + ":" + String(m).padStart(2, "0");
+    }
+
+    function checkAnswer() {
+      const raw = answerInput.value.trim();
+      const match = raw.match(/^(\d{1,2}):(\d{2})$/);
+      if (!match) {
+        feedbackDisplay.textContent = "Enter time as H:MM (e.g. 7:30)";
+        feedbackDisplay.className = "incorrect";
+        return;
+      }
+
+      const guessH = parseInt(match[1], 10);
+      const guessM = parseInt(match[2], 10);
+      const correctAnswer = formatTime(targetHours, targetMinutes);
+
+      if (guessH === targetHours && guessM === targetMinutes) {
+        score++;
+        scoreDisplay.textContent = "Score: " + score;
+        feedbackDisplay.textContent = "Correct!";
+        feedbackDisplay.className = "correct";
+      } else {
+        feedbackDisplay.textContent = "Incorrect! It was " + correctAnswer;
+        feedbackDisplay.className = "incorrect";
+      }
+
+      answerInput.value = "";
+      generateRandomTime();
+    }
+
+    submitBtn.addEventListener("click", checkAnswer);
+    answerInput.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") checkAnswer();
+    });
+
+    generateRandomTime();
+    answerInput.focus();
+  </script>
+</body>
+</html>

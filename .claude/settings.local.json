@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm init -y)",
+      "Bash(npm install express)",
+      "Bash(node -e \"const app = require\\('./server'\\); setTimeout\\(\\(\\) => process.exit\\(0\\), 100\\)\" 2>&1 || true)"
+    ]
+  }
+}
