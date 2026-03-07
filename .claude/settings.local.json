@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npm init -y)",
       "Bash(npm install express)",
-      "Bash(node -e \"const app = require\\('./server'\\); setTimeout\\(\\(\\) => process.exit\\(0\\), 100\\)\" 2>&1 || true)"
+      "Bash(node -e \"const app = require\\('./server'\\); setTimeout\\(\\(\\) => process.exit\\(0\\), 100\\)\" 2>&1 || true)",
+      "Bash(node -e \"const fs = require\\('fs'\\); const html = fs.readFileSync\\('public/index.html', 'utf8'\\); console.log\\('File size:', html.length\\); console.log\\('game-container open count:', \\(html.match\\(/<div id=\\\\\"game-container\\\\\">/g\\) || []\\).length\\); console.log\\('Container close tags check - lines around closing:'\\); const lines = html.split\\('\\\\n'\\); for\\(let i=0;i<lines.length;i++\\) { if\\(lines[i].includes\\('</div>'\\) && i > 360 && i < 380\\) console.log\\(\\(i+1\\) + ': ' + lines[i].trim\\(\\)\\); }\")"
     ]
   }
 }
