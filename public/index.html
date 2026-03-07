@@ -198,9 +198,102 @@
       font-size: 18px;
       letter-spacing: 4px;
     }
+    #elapsed {
+      position: fixed;
+      top: 16px;
+      right: 20px;
+      font-size: 22px;
+      font-weight: bold;
+      font-variant-numeric: tabular-nums;
+      color: #a2d2ff;
+      z-index: 50;
+    }
+    #record-banner {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 16px;
+      color: #facc15;
+      z-index: 50;
+      text-align: center;
+    }
+    #record-banner .record-name {
+      font-weight: bold;
+      font-size: 18px;
+    }
+    #name-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      justify-content: center;
+      align-items: center;
+    }
+    #name-modal .modal-box {
+      background: #16213e;
+      border: 3px solid #facc15;
+      border-radius: 16px;
+      padding: 32px 40px;
+      text-align: center;
+      max-width: 400px;
+    }
+    #name-modal .modal-box h2 {
+      color: #facc15;
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    #name-modal .modal-box p {
+      color: #ccc;
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+    #name-modal .modal-box .record-time {
+      color: #4ade80;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    #name-input {
+      padding: 10px 14px;
+      font-size: 20px;
+      border: 2px solid #facc15;
+      border-radius: 6px;
+      background: #1a1a2e;
+      color: #e2e2e2;
+      text-align: center;
+      width: 220px;
+      margin-bottom: 16px;
+    }
+    #name-submit-btn {
+      padding: 10px 24px;
+      font-size: 18px;
+      border: none;
+      border-radius: 6px;
+      background: #facc15;
+      color: #1a1a2e;
+      cursor: pointer;
+      font-weight: bold;
+      margin-left: 8px;
+    }
+    #name-submit-btn:hover { background: #fbbf24; }
   </style>
 </head>
 <body>
+  <div id="record-banner"></div>
+  <div id="elapsed">0:00.0</div>
+  <div id="name-modal">
+    <div class="modal-box">
+      <h2>New Record!</h2>
+      <div class="record-time" id="new-record-time"></div>
+      <p>Enter your name for the leaderboard:</p>
+      <div>
+        <input type="text" id="name-input" placeholder="Your name" maxlength="20">
+        <button id="name-submit-btn">Save</button>
+      </div>
+    </div>
+  </div>
   <canvas id="confetti-canvas" width="1000" height="1000"></canvas>
   <div id="game-area">
     <canvas id="clock" width="500" height="500"></canvas>
@@ -235,7 +328,7 @@
       <button id="submit-btn">Submit</button>
     </div>
     <div id="timer">1:00</div>
-    <div id="score">Score: 0</div>
+    <div id="score">Score: 0/10</div>
     <div id="mistakes">❤️❤️❤️❤️❤️</div>
     <div id="feedback"></div>
   </div>
@@ -262,19 +355,120 @@
     let timerInterval = null;
     let remainingMs = 0;
 
+    // Elapsed time tracking
+    const elapsedDisplay = document.getElementById("elapsed");
+    const recordBanner = document.getElementById("record-banner");
+    const nameModal = document.getElementById("name-modal");
+    const nameInput = document.getElementById("name-input");
+    const nameSubmitBtn = document.getElementById("name-submit-btn");
+    const newRecordTime = document.getElementById("new-record-time");
+
+    let elapsedMs = 0;
+    let elapsedInterval = null;
+
+    function getTodayKey() {
+      const d = new Date();
+      return "clockRecord_" + d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    }
+
+    function loadRecord() {
+      const key = getTodayKey();
+      const data = localStorage.getItem(key);
+      if (data) return JSON.parse(data);
+      return null;
+    }
+
+    function saveRecord(ms, name) {
+      const key = getTodayKey();
+      localStorage.setItem(key, JSON.stringify({ time: ms, name: name }));
+    }
+
+    function formatElapsed(ms) {
+      const totalSecs = Math.floor(ms / 1000);
+      const mins = Math.floor(totalSecs / 60);
+      const secs = totalSecs % 60;
+      const tenths = Math.floor((ms % 1000) / 100);
+      return mins + ":" + String(secs).padStart(2, "0") + "." + tenths;
+    }
+
+    function updateElapsedDisplay() {
+      elapsedDisplay.textContent = formatElapsed(elapsedMs);
+    }
+
+    function startElapsedTimer() {
+      clearInterval(elapsedInterval);
+      elapsedInterval = setInterval(function() {
+        elapsedMs += 100;
+        updateElapsedDisplay();
+      }, 100);
+    }
+
+    function stopElapsedTimer() {
+      clearInterval(elapsedInterval);
+    }
+
+    function updateRecordBanner() {
+      const record = loadRecord();
+      if (record) {
+        recordBanner.innerHTML = '<span class="record-name">' + escapeHtml(record.name) + '</span><br>Today\'s Record: ' + formatElapsed(record.time);
+      } else {
+        recordBanner.textContent = "No record today yet!";
+      }
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function checkRecord(finishMs) {
+      const record = loadRecord();
+      if (!record || finishMs < record.time) {
+        return true;
+      }
+      return false;
+    }
+
+    function promptForName(finishMs) {
+      newRecordTime.textContent = formatElapsed(finishMs);
+      nameInput.value = "";
+      nameModal.style.display = "flex";
+      nameInput.focus();
+    }
+
+    nameSubmitBtn.addEventListener("click", function() {
+      submitName();
+    });
+    nameInput.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") submitName();
+    });
+
+    function submitName() {
+      const name = nameInput.value.trim() || "Anonymous";
+      saveRecord(elapsedMs, name);
+      nameModal.style.display = "none";
+      updateRecordBanner();
+    }
+
+    updateRecordBanner();
+
     function updateMistakesDisplay() {
       const remaining = maxMistakes - mistakes;
       mistakesDisplay.innerHTML = "❤️".repeat(remaining) + "🖤".repeat(mistakes);
     }
 
     function getTimeLimitMs() {
-      return Math.max(5000, 45000 - score * 5000);
+      if (score >= 9) return 10000;
+      if (score >= 8) return 20000;
+      return Math.max(30000, 60000 - score * 5000);
     }
 
     function startTimer() {
       clearInterval(timerInterval);
       remainingMs = getTimeLimitMs();
       updateTimerDisplay();
+      startElapsedTimer();
       timerInterval = setInterval(function() {
         remainingMs -= 100;
         if (remainingMs <= 0) {
@@ -310,24 +504,64 @@
       feedbackDisplay.className = "incorrect";
       launchRain();
       playIncorrectSound();
+      playWhineSound();
       answerInput.value = "";
       if (mistakes >= maxMistakes) {
         showLoseScreen();
         return;
       }
-      generateRandomTime();
+      sadDogTransition();
     }
 
-    function generateRandomTime() {
+    function pickRandomTime() {
       targetHours = Math.floor(Math.random() * 12) + 1;
       targetMinutes = score >= 7
         ? Math.floor(Math.random() * 60)
         : Math.floor(Math.random() * 12) * 5;
+    }
+
+    function generateRandomTime() {
+      pickRandomTime();
       drawClock();
+      answerInput.focus();
       startTimer();
     }
 
+    function spinToNextRound() {
+      transitioning = true;
+      answerInput.disabled = true;
+      submitBtn.disabled = true;
+      pickRandomTime();
+      spinHandsToTarget(function() {
+        transitioning = false;
+        answerInput.disabled = false;
+        submitBtn.disabled = false;
+        answerInput.focus();
+        startTimer();
+      });
+    }
+
+    function sadDogTransition() {
+      transitioning = true;
+      answerInput.disabled = true;
+      submitBtn.disabled = true;
+      launchSadDog(function() {
+        pickRandomTime();
+        spinHandsToTarget(function() {
+          transitioning = false;
+          answerInput.disabled = false;
+          submitBtn.disabled = false;
+          answerInput.focus();
+          startTimer();
+        });
+      });
+    }
+
     function drawClock() {
+      drawClockAt(targetHours, targetMinutes);
+    }
+
+    function drawClockAt(h, m) {
       ctx.clearRect(0, 0, size, size);
 
       // Face
@@ -380,11 +614,11 @@
       }
 
       // Hour hand
-      const hourAngle = ((targetHours % 12 + targetMinutes / 60) * Math.PI) / 6 - Math.PI / 2;
+      const hourAngle = ((h % 12 + m / 60) * Math.PI) / 6 - Math.PI / 2;
       drawHand(hourAngle, radius * 0.5, 6, "#e2e2e2");
 
       // Minute hand
-      const minuteAngle = (targetMinutes * Math.PI) / 30 - Math.PI / 2;
+      const minuteAngle = (m * Math.PI) / 30 - Math.PI / 2;
       drawHand(minuteAngle, radius * 0.7, 4, "#a2d2ff");
 
       // Center dot
@@ -613,7 +847,356 @@
       });
     }
 
+    // Dog jumping animation
+    let dogAnim = null;
+
+    function launchDog(onComplete) {
+      cancelAnimationFrame(dogAnim);
+      const startX = -100;
+      const endX = size + 100;
+      const groundY = size * 0.6;
+      const totalFrames = 140;
+      let frame = 0;
+
+      function animateDog() {
+        // Redraw clock face as background (no hands)
+        drawClockFace();
+        frame++;
+        const t = frame / totalFrames;
+        const x = startX + (endX - startX) * t;
+        // Parabolic arc: two bounces
+        const bounceT = (t * 2) % 1;
+        const jumpHeight = size * 0.35;
+        const y = groundY - jumpHeight * 4 * bounceT * (1 - bounceT);
+
+        // Draw dog on clock canvas
+        drawDogOnClock(x, y, true);
+
+        if (frame < totalFrames) {
+          dogAnim = requestAnimationFrame(animateDog);
+        } else {
+          drawClockFace();
+          if (onComplete) onComplete();
+        }
+      }
+      animateDog();
+    }
+
+    function drawDogOnClock(cx, cy, facingRight) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      if (!facingRight) { ctx.scale(-1, 1); }
+      const s = 1.2;
+      // Body
+      ctx.fillStyle = "#c4813d";
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 28 * s, 18 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Head
+      ctx.beginPath();
+      ctx.ellipse(26 * s, -14 * s, 16 * s, 14 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Ear
+      ctx.fillStyle = "#9a6530";
+      ctx.beginPath();
+      ctx.ellipse(34 * s, -26 * s, 7 * s, 12 * s, 0.3, 0, Math.PI * 2);
+      ctx.fill();
+      // Eye
+      ctx.fillStyle = "#222";
+      ctx.beginPath();
+      ctx.arc(32 * s, -16 * s, 3 * s, 0, Math.PI * 2);
+      ctx.fill();
+      // Nose
+      ctx.fillStyle = "#333";
+      ctx.beginPath();
+      ctx.arc(40 * s, -10 * s, 3 * s, 0, Math.PI * 2);
+      ctx.fill();
+      // Tongue
+      ctx.fillStyle = "#e63946";
+      ctx.beginPath();
+      ctx.ellipse(38 * s, -3 * s, 3 * s, 6 * s, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+      // Legs (front)
+      ctx.fillStyle = "#c4813d";
+      ctx.fillRect(12 * s, 12 * s, 6 * s, 20 * s);
+      ctx.fillRect(20 * s, 12 * s, 6 * s, 20 * s);
+      // Legs (back)
+      ctx.fillRect(-18 * s, 12 * s, 6 * s, 20 * s);
+      ctx.fillRect(-10 * s, 12 * s, 6 * s, 20 * s);
+      // Tail
+      ctx.strokeStyle = "#c4813d";
+      ctx.lineWidth = 5 * s;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(-28 * s, -6 * s);
+      ctx.quadraticCurveTo(-40 * s, -30 * s, -32 * s, -34 * s);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Sad dog sitting animation
+    let sadDogAnim = null;
+
+    function drawSadDogOnClock(cx, cy, headBob) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      const s = 1.2;
+      // Body (sitting — more upright)
+      ctx.fillStyle = "#c4813d";
+      ctx.beginPath();
+      ctx.ellipse(0, 4 * s, 24 * s, 20 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Head (drooped down)
+      ctx.beginPath();
+      ctx.ellipse(0, -22 * s + headBob, 16 * s, 14 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Ears (floppy, drooping)
+      ctx.fillStyle = "#9a6530";
+      ctx.beginPath();
+      ctx.ellipse(-14 * s, -18 * s + headBob, 7 * s, 14 * s, -0.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(14 * s, -18 * s + headBob, 7 * s, 14 * s, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+      // Eyes (sad, half-closed)
+      ctx.fillStyle = "#222";
+      ctx.beginPath();
+      ctx.ellipse(-6 * s, -24 * s + headBob, 3 * s, 1.5 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(6 * s, -24 * s + headBob, 3 * s, 1.5 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Sad eyebrows
+      ctx.strokeStyle = "#9a6530";
+      ctx.lineWidth = 2 * s;
+      ctx.beginPath();
+      ctx.moveTo(-10 * s, -28 * s + headBob);
+      ctx.lineTo(-3 * s, -26 * s + headBob);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(10 * s, -28 * s + headBob);
+      ctx.lineTo(3 * s, -26 * s + headBob);
+      ctx.stroke();
+      // Nose
+      ctx.fillStyle = "#333";
+      ctx.beginPath();
+      ctx.arc(0, -17 * s + headBob, 3 * s, 0, Math.PI * 2);
+      ctx.fill();
+      // Sad mouth
+      ctx.strokeStyle = "#333";
+      ctx.lineWidth = 2 * s;
+      ctx.beginPath();
+      ctx.arc(0, -11 * s + headBob, 5 * s, Math.PI + 0.3, Math.PI * 2 - 0.3);
+      ctx.stroke();
+      // Front paws
+      ctx.fillStyle = "#c4813d";
+      ctx.beginPath();
+      ctx.ellipse(-10 * s, 22 * s, 6 * s, 4 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(10 * s, 22 * s, 6 * s, 4 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Tail (drooping)
+      ctx.strokeStyle = "#c4813d";
+      ctx.lineWidth = 5 * s;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(-20 * s, 10 * s);
+      ctx.quadraticCurveTo(-34 * s, 18 * s, -30 * s, 26 * s);
+      ctx.stroke();
+      // Tear drop
+      ctx.fillStyle = "#6899cc";
+      ctx.globalAlpha = 0.7;
+      ctx.beginPath();
+      ctx.ellipse(10 * s, -18 * s + headBob, 2 * s, 3 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+
+    function launchSadDog(onComplete) {
+      cancelAnimationFrame(sadDogAnim);
+      const totalFrames = 120;
+      let frame = 0;
+      const dogX = center;
+      const dogY = center + 20;
+
+      function animateSadDog() {
+        drawClockFace();
+        frame++;
+        // Gentle head bob
+        const headBob = Math.sin(frame * 0.1) * 3;
+        drawSadDogOnClock(dogX, dogY, headBob);
+
+        if (frame < totalFrames) {
+          sadDogAnim = requestAnimationFrame(animateSadDog);
+        } else {
+          drawClockFace();
+          if (onComplete) onComplete();
+        }
+      }
+      animateSadDog();
+    }
+
+    function playWhineSound() {
+      resumeAudio();
+      // High-pitched descending whine
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.6);
+      osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.9);
+      osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 1.5);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime + 0.5);
+      gain.gain.exponentialRampToValueAtTime(0.15, audioCtx.currentTime + 0.7);
+      gain.gain.setValueAtTime(0.25, audioCtx.currentTime + 0.9);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 1.5);
+      // Second whimper
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+      osc2.type = "sine";
+      osc2.frequency.setValueAtTime(700, audioCtx.currentTime + 0.5);
+      osc2.frequency.exponentialRampToValueAtTime(350, audioCtx.currentTime + 1.0);
+      gain2.gain.setValueAtTime(0.001, audioCtx.currentTime);
+      gain2.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.5);
+      gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.0);
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      osc2.start(audioCtx.currentTime);
+      osc2.stop(audioCtx.currentTime + 1.0);
+    }
+
+    // Spinning clock hands animation
+    let spinAnim = null;
+
+    function spinHandsToTarget(onComplete) {
+      cancelAnimationFrame(spinAnim);
+      const totalFrames = 120;
+      let frame = 0;
+      // Start from a random position and spin several full rotations
+      const startMinAngle = Math.random() * Math.PI * 2;
+      const startHourAngle = Math.random() * Math.PI * 2;
+      const targetMinAngle = (targetMinutes * Math.PI) / 30 - Math.PI / 2;
+      const targetHourAngle = ((targetHours % 12 + targetMinutes / 60) * Math.PI) / 6 - Math.PI / 2;
+      // Ensure we spin forward by adding full rotations
+      const minExtraSpins = Math.PI * 8;
+      const hourExtraSpins = Math.PI * 4;
+      // Make sure end angles are ahead of start angles by adding full rotations
+      let endMinAngle = targetMinAngle + minExtraSpins;
+      while (endMinAngle < startMinAngle) endMinAngle += Math.PI * 2;
+      let endHourAngle = targetHourAngle + hourExtraSpins;
+      while (endHourAngle < startHourAngle) endHourAngle += Math.PI * 2;
+
+      function animateSpin() {
+        frame++;
+        // Ease-out quintic — very fast start, long gradual slowdown at the end
+        const t = frame / totalFrames;
+        const ease = 1 - Math.pow(1 - t, 5);
+
+        const currentMin = startMinAngle + (endMinAngle - startMinAngle) * ease;
+        const currentHour = startHourAngle + (endHourAngle - startHourAngle) * ease;
+
+        // Convert angles back to h/m for drawClockAt
+        // We'll draw directly using angles instead
+        drawClockFace();
+        drawHand(currentHour, radius * 0.5, 6, "#e2e2e2");
+        drawHand(currentMin, radius * 0.7, 4, "#a2d2ff");
+        // Center dot
+        ctx.beginPath();
+        ctx.arc(center, center, 6, 0, Math.PI * 2);
+        ctx.fillStyle = "#a2d2ff";
+        ctx.fill();
+
+        if (frame < totalFrames) {
+          spinAnim = requestAnimationFrame(animateSpin);
+        } else {
+          if (onComplete) onComplete();
+        }
+      }
+      animateSpin();
+    }
+
+    function drawClockFace() {
+      ctx.clearRect(0, 0, size, size);
+
+      // Face
+      ctx.beginPath();
+      ctx.arc(center, center, radius, 0, Math.PI * 2);
+      ctx.fillStyle = "#16213e";
+      ctx.fill();
+      ctx.strokeStyle = "#e2e2e2";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Hour markers
+      for (let i = 0; i < 12; i++) {
+        const angle = (i * Math.PI) / 6 - Math.PI / 2;
+        const inner = radius - 25;
+        const outer = radius - 8;
+        ctx.beginPath();
+        ctx.moveTo(center + inner * Math.cos(angle), center + inner * Math.sin(angle));
+        ctx.lineTo(center + outer * Math.cos(angle), center + outer * Math.sin(angle));
+        ctx.strokeStyle = "#e2e2e2";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+
+      // Minute markers
+      for (let i = 0; i < 60; i++) {
+        if (i % 5 === 0) continue;
+        const angle = (i * Math.PI) / 30 - Math.PI / 2;
+        const inner = radius - 12;
+        const outer = radius - 8;
+        ctx.beginPath();
+        ctx.moveTo(center + inner * Math.cos(angle), center + inner * Math.sin(angle));
+        ctx.lineTo(center + outer * Math.cos(angle), center + outer * Math.sin(angle));
+        ctx.strokeStyle = "#555";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // Hour numbers
+      ctx.fillStyle = "#e2e2e2";
+      ctx.font = "bold 24px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      for (let i = 1; i <= 12; i++) {
+        if (score >= 6) break;
+        if (score >= 4 && i % 3 !== 0) continue;
+        const angle = (i * Math.PI) / 6 - Math.PI / 2;
+        const numRadius = radius - 45;
+        ctx.fillText(i, center + numRadius * Math.cos(angle), center + numRadius * Math.sin(angle));
+      }
+    }
+
+    let transitioning = false;
+
+    function transitionToNextRound() {
+      transitioning = true;
+      answerInput.disabled = true;
+      submitBtn.disabled = true;
+
+      pickRandomTime();
+
+      launchDog(function() {
+        spinHandsToTarget(function() {
+          transitioning = false;
+          answerInput.disabled = false;
+          submitBtn.disabled = false;
+          answerInput.focus();
+          startTimer();
+        });
+      });
+    }
+
     function checkAnswer() {
+      if (transitioning) return;
       const raw = answerInput.value.trim();
       const match = raw.match(/^(\d{1,2}):(\d{2})$/);
       if (!match) {
@@ -628,16 +1211,19 @@
 
       if (guessH === targetHours && guessM === targetMinutes) {
         score++;
-        scoreDisplay.textContent = "Score: " + score;
+        clearInterval(timerInterval);
+        scoreDisplay.textContent = "Score: " + score + "/10";
         if (score >= 10) {
-          clearInterval(timerInterval);
           showWinScreen();
           return;
         }
         feedbackDisplay.textContent = "Correct!";
         feedbackDisplay.className = "correct";
-        launchConfetti();
         playCorrectSound();
+        answerInput.value = "";
+        launchConfetti();
+        transitionToNextRound();
+        return;
       } else {
         mistakes++;
         updateMistakesDisplay();
@@ -645,16 +1231,18 @@
         feedbackDisplay.className = "incorrect";
         launchRain();
         playIncorrectSound();
+        playWhineSound();
         if (mistakes >= maxMistakes) {
           clearInterval(timerInterval);
           answerInput.value = "";
           showLoseScreen();
           return;
         }
+        clearInterval(timerInterval);
+        answerInput.value = "";
+        sadDogTransition();
+        return;
       }
-
-      answerInput.value = "";
-      generateRandomTime();
     }
 
     const gameArea = document.getElementById("game-area");
@@ -666,6 +1254,7 @@
     const finalScoreValue = document.getElementById("final-score-value");
 
     function showWinScreen() {
+      stopElapsedTimer();
       gameArea.style.display = "none";
       controlsDiv.style.display = "none";
       winScreen.style.display = "flex";
@@ -675,7 +1264,12 @@
       const celebrationInterval = setInterval(function() {
         bursts++;
         launchConfetti();
-        if (bursts >= 5) clearInterval(celebrationInterval);
+        if (bursts >= 5) {
+          clearInterval(celebrationInterval);
+          if (checkRecord(elapsedMs)) {
+            promptForName(elapsedMs);
+          }
+        }
       }, 800);
     }
 
@@ -711,6 +1305,7 @@
     }
 
     function showLoseScreen() {
+      stopElapsedTimer();
       gameArea.style.display = "none";
       controlsDiv.style.display = "none";
       finalScoreValue.textContent = score;
@@ -729,7 +1324,10 @@
     function resetGame() {
       score = 0;
       mistakes = 0;
-      scoreDisplay.textContent = "Score: 0";
+      elapsedMs = 0;
+      stopElapsedTimer();
+      updateElapsedDisplay();
+      scoreDisplay.textContent = "Score: 0/10";
       updateMistakesDisplay();
       feedbackDisplay.textContent = "";
       feedbackDisplay.className = "";
@@ -738,8 +1336,7 @@
       gameArea.style.display = "";
       controlsDiv.style.display = "flex";
       answerInput.value = "";
-      generateRandomTime();
-      answerInput.focus();
+      spinToNextRound();
     }
 
     playAgainBtn.addEventListener("click", resetGame);
@@ -750,8 +1347,7 @@
       if (e.key === "Enter") checkAnswer();
     });
 
-    generateRandomTime();
-    answerInput.focus();
+    spinToNextRound();
   </script>
 </body>
 </html>
