@@ -11,6 +11,14 @@ body {
   color: #e2e2e2;
 }
 
+#game-title {
+  font-size: 32px;
+  font-weight: bold;
+  color: #facc15;
+  text-align: center;
+  margin: 16px 0;
+}
+
 canvas { display: block; position: relative; }
 
 /* --- Game Layout --- */
