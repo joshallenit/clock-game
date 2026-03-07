@@ -17,6 +17,33 @@
       color: #e2e2e2;
     }
     canvas { display: block; position: relative; }
+    #game-layout {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+    #options-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .option-btn {
+      padding: 14px 28px;
+      font-size: 22px;
+      font-weight: bold;
+      border: 2px solid #e2e2e2;
+      border-radius: 8px;
+      background: #16213e;
+      color: #e2e2e2;
+      cursor: pointer;
+      min-width: 140px;
+      text-align: center;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .option-btn:hover { background: #1f3460; border-color: #a2d2ff; }
+    .option-btn:disabled { opacity: 0.5; cursor: default; }
+    .option-btn.correct-pick { background: #166534; border-color: #4ade80; color: #4ade80; }
+    .option-btn.incorrect-pick { background: #7f1d1d; border-color: #e63946; color: #e63946; }
     #confetti-canvas {
       position: fixed;
       top: 0;
@@ -296,7 +323,10 @@
   </div>
   <canvas id="confetti-canvas" width="1000" height="1000"></canvas>
   <div id="game-area">
-    <canvas id="clock" width="500" height="500"></canvas>
+    <div id="game-layout">
+      <canvas id="clock" width="500" height="500"></canvas>
+      <div id="options-panel"></div>
+    </div>
   </div>
   <div id="win-screen">
     <h1>You've Won!</h1>
@@ -506,6 +536,7 @@
       playIncorrectSound();
       playWhineSound();
       answerInput.value = "";
+      disableOptions();
       if (mistakes >= maxMistakes) {
         showLoseScreen();
         return;
@@ -523,6 +554,7 @@
     function generateRandomTime() {
       pickRandomTime();
       drawClock();
+      renderOptions();
       answerInput.focus();
       startTimer();
     }
@@ -531,11 +563,13 @@
       transitioning = true;
       answerInput.disabled = true;
       submitBtn.disabled = true;
+      disableOptions();
       pickRandomTime();
       spinHandsToTarget(function() {
         transitioning = false;
         answerInput.disabled = false;
         submitBtn.disabled = false;
+        renderOptions();
         answerInput.focus();
         startTimer();
       });
@@ -545,12 +579,14 @@
       transitioning = true;
       answerInput.disabled = true;
       submitBtn.disabled = true;
+      disableOptions();
       launchSadDog(function() {
         pickRandomTime();
         spinHandsToTarget(function() {
           transitioning = false;
           answerInput.disabled = false;
           submitBtn.disabled = false;
+          renderOptions();
           answerInput.focus();
           startTimer();
         });
@@ -640,6 +676,149 @@
 
     function formatTime(h, m) {
       return h + ":" + String(m).padStart(2, "0");
+    }
+
+    // Multiple choice options
+    const optionsPanel = document.getElementById("options-panel");
+
+    function wrapHour(h) {
+      // Keep hour in 1-12 range
+      return ((h - 1 + 12) % 12) + 1;
+    }
+
+    function getSwappedTime(h, m) {
+      // Interpret minute hand position as hour and hour hand position as minutes
+      // Minute hand points to m, so as an hour that's the number at that position
+      // Hour hand points based on h + m/60
+      // "Swapped" means: read the minute hand as the hour, and the hour hand as the minutes
+      var swappedH = Math.floor(m / 5);
+      if (swappedH === 0) swappedH = 12;
+      // The hour hand is at position (h % 12 + m/60), in "minute" units that's (h % 12 + m/60) * 5
+      var swappedM = Math.round(((h % 12) + m / 60) * 5) % 60;
+      return { h: swappedH, m: swappedM };
+    }
+
+    function generateOptions() {
+      var correct = { h: targetHours, m: targetMinutes };
+      var swapped = getSwappedTime(targetHours, targetMinutes);
+
+      var options = [];
+      // 1. Correct answer
+      options.push({ h: correct.h, m: correct.m, label: formatTime(correct.h, correct.m) });
+      // 2. Swapped interpretation
+      options.push({ h: swapped.h, m: swapped.m, label: formatTime(swapped.h, swapped.m) });
+      // 3. Correct +1 hour
+      options.push({ h: wrapHour(correct.h + 1), m: correct.m, label: formatTime(wrapHour(correct.h + 1), correct.m) });
+      // 4. Correct -1 hour
+      options.push({ h: wrapHour(correct.h - 1), m: correct.m, label: formatTime(wrapHour(correct.h - 1), correct.m) });
+      // 5. Swapped +1 hour
+      options.push({ h: wrapHour(swapped.h + 1), m: swapped.m, label: formatTime(wrapHour(swapped.h + 1), swapped.m) });
+      // 6. Swapped -1 hour
+      options.push({ h: wrapHour(swapped.h - 1), m: swapped.m, label: formatTime(wrapHour(swapped.h - 1), swapped.m) });
+
+      // Deduplicate by label (some times can collide), fill with random nearby times
+      var seen = {};
+      var unique = [];
+      for (var i = 0; i < options.length; i++) {
+        if (!seen[options[i].label]) {
+          seen[options[i].label] = true;
+          unique.push(options[i]);
+        }
+      }
+      // Fill up to 6 if duplicates removed
+      while (unique.length < 6) {
+        var rh = Math.floor(Math.random() * 12) + 1;
+        var rm = Math.floor(Math.random() * 12) * 5;
+        var rl = formatTime(rh, rm);
+        if (!seen[rl]) {
+          seen[rl] = true;
+          unique.push({ h: rh, m: rm, label: rl });
+        }
+      }
+
+      // Shuffle
+      for (var i = unique.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = unique[i];
+        unique[i] = unique[j];
+        unique[j] = tmp;
+      }
+
+      return unique;
+    }
+
+    function renderOptions() {
+      optionsPanel.innerHTML = "";
+      var options = generateOptions();
+      var correctLabel = formatTime(targetHours, targetMinutes);
+      for (var i = 0; i < options.length; i++) {
+        (function(opt) {
+          var btn = document.createElement("button");
+          btn.className = "option-btn";
+          btn.textContent = opt.label;
+          btn.addEventListener("click", function() {
+            handleOptionClick(opt.label, correctLabel, btn);
+          });
+          optionsPanel.appendChild(btn);
+        })(options[i]);
+      }
+    }
+
+    function handleOptionClick(label, correctLabel, btn) {
+      if (transitioning) return;
+      if (label === correctLabel) {
+        btn.classList.add("correct-pick");
+        score++;
+        clearInterval(timerInterval);
+        scoreDisplay.textContent = "Score: " + score + "/10";
+        if (score >= 10) {
+          showWinScreen();
+          return;
+        }
+        feedbackDisplay.textContent = "Correct!";
+        feedbackDisplay.className = "correct";
+        playCorrectSound();
+        answerInput.value = "";
+        launchConfetti();
+        disableOptions();
+        transitionToNextRound();
+      } else {
+        btn.classList.add("incorrect-pick");
+        btn.disabled = true;
+        mistakes++;
+        updateMistakesDisplay();
+        var correctAnswer = correctLabel;
+        feedbackDisplay.textContent = "Incorrect! It was " + correctAnswer;
+        feedbackDisplay.className = "incorrect";
+        launchRain();
+        playIncorrectSound();
+        playWhineSound();
+        if (mistakes >= maxMistakes) {
+          clearInterval(timerInterval);
+          answerInput.value = "";
+          disableOptions();
+          showLoseScreen();
+          return;
+        }
+        clearInterval(timerInterval);
+        answerInput.value = "";
+        disableOptions();
+        sadDogTransition();
+      }
+    }
+
+    function disableOptions() {
+      var btns = optionsPanel.querySelectorAll(".option-btn");
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].disabled = true;
+      }
+    }
+
+    function enableOptions() {
+      var btns = optionsPanel.querySelectorAll(".option-btn");
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].disabled = false;
+      }
     }
 
     // Confetti animation
@@ -1181,6 +1360,7 @@
       transitioning = true;
       answerInput.disabled = true;
       submitBtn.disabled = true;
+      disableOptions();
 
       pickRandomTime();
 
@@ -1189,6 +1369,7 @@
           transitioning = false;
           answerInput.disabled = false;
           submitBtn.disabled = false;
+          renderOptions();
           answerInput.focus();
           startTimer();
         });
