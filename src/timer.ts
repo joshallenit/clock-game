@@ -50,6 +50,14 @@ function clearRoundTimeout(): void {
   state.activeTimeoutCallback = null;
 }
 
+function fireRoundTimeout(): void {
+  const cb = state.activeTimeoutCallback;
+  clearRoundTimeout();
+  if (state.timerInterval !== null) clearInterval(state.timerInterval);
+  cb?.();
+  updateTimerDisplay();
+}
+
 // When the tab becomes visible again, re-sync the authoritative timeout
 // so it fires at the correct wall-clock time (browsers throttle setInterval
 // and setTimeout in background tabs, which could delay the timeout).
@@ -60,9 +68,7 @@ function handleVisibilityChange(): void {
   state.remainingMs = Math.max(0, state.roundDuration - elapsed);
 
   if (state.remainingMs <= 0) {
-    const cb = state.activeTimeoutCallback;
-    clearRoundTimeout();
-    cb();
+    fireRoundTimeout();
   } else {
     rescheduleRoundTimeout();
   }
@@ -71,15 +77,8 @@ function handleVisibilityChange(): void {
 
 function rescheduleRoundTimeout(): void {
   if (state.roundTimeoutId !== null) clearTimeout(state.roundTimeoutId);
-  const cb = state.activeTimeoutCallback;
-  if (!cb) return;
-  state.roundTimeoutId = setTimeout(() => {
-    state.roundTimeoutId = null;
-    state.activeTimeoutCallback = null;
-    if (state.timerInterval !== null) clearInterval(state.timerInterval);
-    cb();
-    updateTimerDisplay();
-  }, state.remainingMs);
+  if (!state.activeTimeoutCallback) return;
+  state.roundTimeoutId = setTimeout(fireRoundTimeout, state.remainingMs);
 }
 
 export function setupTimerListeners(): void {
@@ -97,13 +96,7 @@ export function startRoundTimer(onTimeout: () => void): void {
   startElapsedTimer();
 
   // Authoritative timeout — fires at the correct time even if setInterval drifts
-  state.roundTimeoutId = setTimeout(() => {
-    state.roundTimeoutId = null;
-    state.activeTimeoutCallback = null;
-    if (state.timerInterval !== null) clearInterval(state.timerInterval);
-    onTimeout();
-    updateTimerDisplay();
-  }, state.roundDuration);
+  state.roundTimeoutId = setTimeout(fireRoundTimeout, state.roundDuration);
 
   // Display-only interval for updating the countdown UI
   state.timerInterval = setInterval(() => {

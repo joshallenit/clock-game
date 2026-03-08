@@ -4,7 +4,7 @@ import { onColorSchemeChange } from "./colors";
 import { dom } from "./dom";
 import { state } from "./state";
 import { formatTime, randomInt, randomChoice } from "./utils";
-import { drawClockFace, drawClockAt, animateToTime } from "./clock";
+import { drawClockFace, drawClockAt, animateToTime, stopSpinAnimation } from "./clock";
 import { generateOptions } from "./options";
 import { pickRandomMinutes } from "./difficulty";
 import { launchConfetti, launchRain } from "./effects";
@@ -209,10 +209,7 @@ function cleanupAnimations(): void {
   stopRoundTimer();
   stopScreenEffects();
   stopDogAnimations();
-  if (state.spinAnimId !== null) {
-    cancelAnimationFrame(state.spinAnimId);
-    state.spinAnimId = null;
-  }
+  stopSpinAnimation();
 }
 
 function resetGame(): void {

@@ -7,13 +7,10 @@ import { playCorrectSound, playGameOverSound } from "./audio";
 import { isNewRecord, promptForName } from "./records";
 import { stopElapsedTimer } from "./timer";
 
-// Rendering-only interval (not in state.ts because it's purely visual/internal)
-let screenInterval: ReturnType<typeof setInterval> | null = null;
-
 export function stopScreenEffects(): void {
-  if (screenInterval !== null) {
-    clearInterval(screenInterval);
-    screenInterval = null;
+  if (state.screenEffectInterval !== null) {
+    clearInterval(state.screenEffectInterval);
+    state.screenEffectInterval = null;
   }
 }
 
@@ -27,7 +24,7 @@ export function showWinScreen(): void {
 
   let bursts = 0;
   stopScreenEffects();
-  screenInterval = setInterval(() => {
+  state.screenEffectInterval = setInterval(() => {
     bursts++;
     launchConfetti();
     if (bursts >= ANIM.winConfettiBursts) {
@@ -50,9 +47,9 @@ export function showLoseScreen(): void {
 
   let waves = 0;
   stopScreenEffects();
-  screenInterval = setInterval(() => {
+  state.screenEffectInterval = setInterval(() => {
     waves++;
     launchRain();
     if (waves >= ANIM.loseRainWaves) stopScreenEffects();
-  }, ANIM.losRainIntervalMs);
+  }, ANIM.loseRainIntervalMs);
 }

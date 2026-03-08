@@ -10,12 +10,8 @@ import type { AnimRef } from "./types";
 
 const ctx = setupHiDPICanvas(dom.clock, CLOCK.size, CLOCK.size);
 
-// AnimRef for the spin transition (kept in state.ts for cleanup coordination)
+// Rendering-only animation ref (not in state.ts because it doesn't affect game logic)
 const spinRef: AnimRef = { id: null };
-
-function syncSpinRefToState(): void {
-  state.spinAnimId = spinRef.id;
-}
 
 function updateClockAriaLabel(h: number, m: number): void {
   dom.clock.setAttribute("aria-label", `Analog clock showing ${formatTime(h, m)}`);
@@ -131,9 +127,6 @@ export function drawClockAt(h: number, m: number): void {
 
 /** Spin clock hands from random angles to the target time, then call onComplete. */
 export function animateToTime(h: number, m: number, onComplete: () => void): void {
-  // Sync any previous spinRef into state for cleanup
-  if (state.spinAnimId !== null) cancelAnimationFrame(state.spinAnimId);
-
   const startMinAngle = Math.random() * Math.PI * 2;
   const startHourAngle = Math.random() * Math.PI * 2;
   const targetMinAngle = (m * Math.PI) / 30 - Math.PI / 2;
@@ -148,7 +141,6 @@ export function animateToTime(h: number, m: number, onComplete: () => void): voi
     ANIM.spinFrames,
     spinRef,
     (_frame, t) => {
-      syncSpinRefToState();
       const ease = 1 - Math.pow(1 - t, 5);
 
       const currentMin = startMinAngle + (endMinAngle - startMinAngle) * ease;
@@ -160,12 +152,16 @@ export function animateToTime(h: number, m: number, onComplete: () => void): voi
       drawCenterDot();
     },
     () => {
-      spinRef.id = null;
-      state.spinAnimId = null;
       updateClockAriaLabel(h, m);
       onComplete();
     },
   );
+}
 
-  syncSpinRefToState();
+/** Cancel any in-progress spin animation. */
+export function stopSpinAnimation(): void {
+  if (spinRef.id !== null) {
+    cancelAnimationFrame(spinRef.id);
+    spinRef.id = null;
+  }
 }

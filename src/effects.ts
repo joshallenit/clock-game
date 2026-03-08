@@ -34,6 +34,7 @@ function runParticleLoop<P>(config: {
   particles: P[];
   beforeDraw?: (particles: P[], width: number, height: number) => void;
   updateParticle: (particle: P, width: number, height: number) => boolean;
+  drawParticle: (ctx: CanvasRenderingContext2D, particle: P) => void;
   onDone?: () => void;
 }): void {
   if (fxState.activeAnim !== null) cancelAnimationFrame(fxState.activeAnim);
@@ -47,7 +48,10 @@ function runParticleLoop<P>(config: {
 
     let alive = false;
     for (const p of config.particles) {
-      if (config.updateParticle(p, cw, ch)) alive = true;
+      if (config.updateParticle(p, cw, ch)) {
+        alive = true;
+        config.drawParticle(ctx, p);
+      }
     }
 
     if (alive) {
@@ -96,15 +100,16 @@ export function launchConfetti(): void {
       p.y += p.vy;
       p.rotation += p.rotationSpeed;
       p.life -= 0.008;
-
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.rotation);
-      ctx.globalAlpha = Math.max(0, p.life);
-      ctx.fillStyle = p.color;
-      ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
-      ctx.restore();
       return true;
+    },
+    drawParticle(c, p) {
+      c.save();
+      c.translate(p.x, p.y);
+      c.rotate(p.rotation);
+      c.globalAlpha = Math.max(0, p.life);
+      c.fillStyle = p.color;
+      c.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+      c.restore();
     },
   });
 }
@@ -162,18 +167,20 @@ export function launchRain(): void {
       if (p.life <= 0) return false;
       p.y += p.vy;
       if (p.y > canvasH) p.life -= 0.04;
-
-      ctx.save();
-      ctx.globalAlpha = Math.max(0, p.life) * 0.8;
-      ctx.strokeStyle = COLORS.rain;
-      ctx.lineWidth = 3;
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      ctx.lineTo(p.x + 2, p.y + p.length);
-      ctx.stroke();
-      ctx.restore();
       return true;
+    },
+    drawParticle(c, p) {
+      if (p.delay > 0) return;
+      c.save();
+      c.globalAlpha = Math.max(0, p.life) * 0.8;
+      c.strokeStyle = COLORS.rain;
+      c.lineWidth = 3;
+      c.lineCap = "round";
+      c.beginPath();
+      c.moveTo(p.x, p.y);
+      c.lineTo(p.x + 2, p.y + p.length);
+      c.stroke();
+      c.restore();
     },
     onDone() {
       canvas.style.transform = "";

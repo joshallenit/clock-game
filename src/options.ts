@@ -35,11 +35,11 @@ export function generateOptions(): TimeOption[] {
   ];
 
   // Deduplicate by label
-  const seen: Record<string, boolean> = {};
+  const seen = new Set<string>();
   const unique: TimeOption[] = [];
   for (const opt of candidates) {
-    if (!seen[opt.label]) {
-      seen[opt.label] = true;
+    if (!seen.has(opt.label)) {
+      seen.add(opt.label);
       unique.push(opt);
     }
   }
@@ -49,8 +49,8 @@ export function generateOptions(): TimeOption[] {
     const rh = randomInt(1, 13);
     const rm = randomInt(0, 12) * 5;
     const rl = formatTime(rh, rm);
-    if (!seen[rl]) {
-      seen[rl] = true;
+    if (!seen.has(rl)) {
+      seen.add(rl);
       unique.push(makeOption(rh, rm));
     }
   }

@@ -12,10 +12,10 @@ export const state: GameState = {
   timerInterval: null,
   elapsedInterval: null,
   correctLabel: "",
-  spinAnimId: null,
   elapsedStart: 0,
   roundStart: 0,
   roundDuration: 0,
   roundTimeoutId: null,
   activeTimeoutCallback: null,
+  screenEffectInterval: null,
 };
