@@ -3,7 +3,7 @@ import { CLOCK, ANIM, DOG } from "./constants";
 import { COLORS } from "./colors";
 import { dom } from "./dom";
 import { getContext2D } from "./utils";
-import { runFrameLoop } from "./animation";
+import { runFrameLoop, cancelAnimation } from "./animation";
 import type { AnimRef } from "./types";
 
 const clockCtx = getContext2D(dom.clock);
@@ -17,12 +17,8 @@ const dogAnim: AnimRef = { id: null };
 const sadDogAnim: AnimRef = { id: null };
 
 export function stopDogAnimations(): void {
-  for (const ref of [dogAnim, sadDogAnim]) {
-    if (ref.id !== null) {
-      cancelAnimationFrame(ref.id);
-      ref.id = null;
-    }
-  }
+  cancelAnimation(dogAnim);
+  cancelAnimation(sadDogAnim);
 }
 
 // --- Happy dog (side view, runs across screen) ---

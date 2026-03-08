@@ -5,7 +5,7 @@ import { dom } from "./dom";
 import { state } from "./state";
 import { setupHiDPICanvas, formatTime } from "./utils";
 import { shouldShowHourNumber } from "./difficulty";
-import { runFrameLoop } from "./animation";
+import { runFrameLoop, cancelAnimation } from "./animation";
 import type { AnimRef } from "./types";
 
 const ctx = setupHiDPICanvas(dom.clock, CLOCK.size, CLOCK.size);
@@ -160,8 +160,5 @@ export function animateToTime(h: number, m: number, onComplete: () => void): voi
 
 /** Cancel any in-progress spin animation. */
 export function stopSpinAnimation(): void {
-  if (spinRef.id !== null) {
-    cancelAnimationFrame(spinRef.id);
-    spinRef.id = null;
-  }
+  cancelAnimation(spinRef);
 }

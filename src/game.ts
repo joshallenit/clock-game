@@ -18,12 +18,6 @@ import { parseTimeInput } from "./input";
 
 // --- Options panel ---
 
-function disableOptions(): void {
-  for (const btn of dom.optionsPanel.querySelectorAll<HTMLButtonElement>(".option-btn")) {
-    btn.disabled = true;
-  }
-}
-
 function createOptionButton(label: string, index: number): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.type = "button";
@@ -89,7 +83,9 @@ function lockControls(): void {
   state.transitioning = true;
   dom.answer.disabled = true;
   dom.submitBtn.disabled = true;
-  disableOptions();
+  for (const btn of dom.optionsPanel.querySelectorAll<HTMLButtonElement>(".option-btn")) {
+    btn.disabled = true;
+  }
 }
 
 // --- Round transitions ---
@@ -134,7 +130,6 @@ function handleCorrect(btn: HTMLButtonElement | null): void {
   playCorrectSound();
   dom.answer.value = "";
   launchConfetti();
-  disableOptions();
   transitionToNextRound();
 }
 
@@ -156,7 +151,6 @@ function handleMistake(feedbackText: string, btn: HTMLButtonElement | null): voi
 
   stopRoundTimer();
   dom.answer.value = "";
-  disableOptions();
 
   if (state.mistakes >= RULES.maxMistakes) {
     showLoseScreen();
