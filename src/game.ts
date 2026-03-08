@@ -41,8 +41,8 @@ function revealOptions(options: ReturnType<typeof generateOptions>, hintBtn: HTM
 }
 
 function renderOptions(): void {
-  dom.optionsPanel.innerHTML = "";
-  const options = generateOptions();
+  dom.optionsPanel.replaceChildren();
+  const options = generateOptions(state.targetHours, state.targetMinutes, state.score);
   state.correctLabel = formatTime(state.targetHours, state.targetMinutes);
 
   const hintBtn = document.createElement("button");

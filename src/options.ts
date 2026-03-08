@@ -1,6 +1,5 @@
 // Generate 6 multiple-choice time answers: correct, swapped, nearby, and random fill.
 import { RULES } from "./constants";
-import { state } from "./state";
 import { formatTime, randomInt } from "./utils";
 import { pickRandomMinutes } from "./difficulty";
 import type { TimeOption } from "./types";
@@ -56,8 +55,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 /** Generate 6 answer choices: correct, swapped, +/-1 hour variants, plus random fill. */
-export function generateOptions(): TimeOption[] {
-  const { targetHours: h, targetMinutes: m } = state;
+export function generateOptions(h: number, m: number, score: number): TimeOption[] {
   const swapped = getSwappedTime(h, m);
 
   const candidates: TimeOption[] = [
@@ -69,5 +67,5 @@ export function generateOptions(): TimeOption[] {
     makeOption(wrapHour(swapped.h - 1), swapped.m),
   ];
 
-  return shuffle(fillWithRandomTimes(deduplicateByLabel(candidates), state.score));
+  return shuffle(fillWithRandomTimes(deduplicateByLabel(candidates), score));
 }
