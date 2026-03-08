@@ -2,8 +2,8 @@
 import { ANIM } from "./constants";
 import { CONFETTI_COLORS, COLORS } from "./colors";
 import { dom } from "./dom";
-import { getContext2D, prefersReducedMotion } from "./utils";
-import type { ConfettiParticle, RainParticle } from "./types";
+import { getContext2D, prefersReducedMotion, randomChoice } from "./utils";
+import type { ConfettiParticle, RainParticle, TimeoutId } from "./types";
 
 const canvas = dom.confettiCanvas;
 const ctx = getContext2D(canvas);
@@ -12,7 +12,7 @@ const ctx = getContext2D(canvas);
 const fxState = {
   activeAnim: null as number | null,
   rainShakeFrames: 0,
-  resizeTimer: null as ReturnType<typeof setTimeout> | null,
+  resizeTimer: null as TimeoutId,
   logicalWidth: window.innerWidth,
   logicalHeight: window.innerHeight,
 };
@@ -84,7 +84,7 @@ export function launchConfetti(): void {
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed - 8,
       size: Math.random() * 12 + 6,
-      color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+      color: randomChoice(CONFETTI_COLORS),
       rotation: Math.random() * Math.PI * 2,
       rotationSpeed: (Math.random() - 0.5) * 0.4,
       life: 1,

@@ -29,10 +29,11 @@ game.ts          Round orchestration: pick time, lock/unlock controls, handle an
 Shared by many:
   state.ts         Single mutable GameState object (all round/session data)
   dom.ts           Typed references to every DOM element (getElementById wrappers)
-  types.ts         All TypeScript interfaces
+  types.ts         All TypeScript interfaces + IntervalId/TimeoutId type aliases
   constants.ts     Immutable config: clock geometry, game rules, animation settings
+  difficulty.ts    Difficulty progression: time limits, minute precision, number visibility
   colors.ts        Dark/light palette, runtime theme switching
-  utils.ts         Pure helpers: formatTime, formatElapsed, etc.
+  utils.ts         Pure helpers: formatTime, formatElapsed, randomInt, randomChoice, etc.
 ```
 
 ## Key patterns
@@ -44,7 +45,8 @@ Shared by many:
 - **Effects overlay** — confetti and rain share a single full-screen canvas (`#confetti-canvas`), also used by dog animations.
 - **Color scheme** — CSS vars handle DOM styling; `colors.ts` COLORS object handles canvas. Both must stay in sync.
 - **Named constants over magic numbers** — timing values, frame counts, and game rules live in `constants.ts`. Inline numbers are reserved for particle physics and sprite geometry where the visual meaning is self-evident from context.
-- **Difficulty progression** — clock numbers hide at score 4/6, minute precision changes at score 7, timer shortens at score 8/9.
+- **Difficulty progression** — all score-dependent logic lives in `difficulty.ts`: clock numbers hide at score 4/6, minute precision changes at score 7, timer shortens at score 8/9.
+- **Dog animations accept a `repaintClock` callback** — keeps `dog.ts` decoupled from clock internals.
 
 ## Commands
 - `npm run dev` — start dev server

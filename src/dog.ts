@@ -3,7 +3,6 @@ import { CLOCK, ANIM } from "./constants";
 import { COLORS } from "./colors";
 import { dom } from "./dom";
 import { getContext2D } from "./utils";
-import { drawClockFace } from "./clock";
 import type { AnimRef } from "./types";
 
 const clockCtx = getContext2D(dom.clock);
@@ -53,54 +52,13 @@ function runAnimation(
 
 // --- Happy dog (side view, runs across screen) ---
 
-function drawHappyDog(
-  c: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  facingRight: boolean,
-): void {
-  c.save();
-  c.translate(cx, cy);
-  if (!facingRight) c.scale(-1, 1);
-
+function drawHappyDogBody(c: CanvasRenderingContext2D): void {
   c.fillStyle = COLORS.dog;
-
-  // Body
   c.beginPath();
   c.ellipse(0, 0, 28 * S, 18 * S, 0, 0, Math.PI * 2);
   c.fill();
 
-  // Head
-  c.beginPath();
-  c.ellipse(26 * S, -14 * S, 16 * S, 14 * S, 0, 0, Math.PI * 2);
-  c.fill();
-
-  // Ear
-  c.fillStyle = COLORS.dogDark;
-  c.beginPath();
-  c.ellipse(34 * S, -26 * S, 7 * S, 12 * S, 0.3, 0, Math.PI * 2);
-  c.fill();
-
-  // Eye
-  c.fillStyle = "#222";
-  c.beginPath();
-  c.arc(32 * S, -16 * S, 3 * S, 0, Math.PI * 2);
-  c.fill();
-
-  // Nose
-  c.fillStyle = "#333";
-  c.beginPath();
-  c.arc(40 * S, -10 * S, 3 * S, 0, Math.PI * 2);
-  c.fill();
-
-  // Tongue
-  c.fillStyle = COLORS.dogTongue;
-  c.beginPath();
-  c.ellipse(38 * S, -3 * S, 3 * S, 6 * S, 0.2, 0, Math.PI * 2);
-  c.fill();
-
   // Legs
-  c.fillStyle = COLORS.dog;
   c.fillRect(12 * S, 12 * S, 6 * S, 20 * S);
   c.fillRect(20 * S, 12 * S, 6 * S, 20 * S);
   c.fillRect(-18 * S, 12 * S, 6 * S, 20 * S);
@@ -114,11 +72,60 @@ function drawHappyDog(
   c.moveTo(-28 * S, -6 * S);
   c.quadraticCurveTo(-40 * S, -30 * S, -32 * S, -34 * S);
   c.stroke();
+}
+
+function drawHappyDogHead(c: CanvasRenderingContext2D): void {
+  c.fillStyle = COLORS.dog;
+  c.beginPath();
+  c.ellipse(26 * S, -14 * S, 16 * S, 14 * S, 0, 0, Math.PI * 2);
+  c.fill();
+
+  // Ear
+  c.fillStyle = COLORS.dogDark;
+  c.beginPath();
+  c.ellipse(34 * S, -26 * S, 7 * S, 12 * S, 0.3, 0, Math.PI * 2);
+  c.fill();
+
+  // Eye
+  c.fillStyle = COLORS.dogEye;
+  c.beginPath();
+  c.arc(32 * S, -16 * S, 3 * S, 0, Math.PI * 2);
+  c.fill();
+
+  // Nose
+  c.fillStyle = COLORS.dogNose;
+  c.beginPath();
+  c.arc(40 * S, -10 * S, 3 * S, 0, Math.PI * 2);
+  c.fill();
+
+  // Tongue
+  c.fillStyle = COLORS.dogTongue;
+  c.beginPath();
+  c.ellipse(38 * S, -3 * S, 3 * S, 6 * S, 0.2, 0, Math.PI * 2);
+  c.fill();
+}
+
+function drawHappyDog(
+  c: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  facingRight: boolean,
+): void {
+  c.save();
+  c.translate(cx, cy);
+  if (!facingRight) c.scale(-1, 1);
+
+  drawHappyDogBody(c);
+  drawHappyDogHead(c);
 
   c.restore();
 }
 
-function launchDogHorizontal(facingRight: boolean, onComplete?: () => void): void {
+function launchDogHorizontal(
+  facingRight: boolean,
+  repaintClock: () => void,
+  onComplete?: () => void,
+): void {
   const screenW = window.innerWidth;
   const screenH = window.innerHeight;
   const startX = facingRight ? -100 : screenW + 100;
@@ -126,7 +133,7 @@ function launchDogHorizontal(facingRight: boolean, onComplete?: () => void): voi
   const groundY = screenH * 0.55;
   const jumpHeight = screenH * 0.3;
 
-  drawClockFace();
+  repaintClock();
 
   runAnimation(
     ANIM.dogRunFrames,
@@ -145,22 +152,17 @@ function launchDogHorizontal(facingRight: boolean, onComplete?: () => void): voi
   );
 }
 
-export function launchDog(onComplete?: () => void): void {
-  launchDogHorizontal(true, onComplete);
+export function launchDog(repaintClock: () => void, onComplete?: () => void): void {
+  launchDogHorizontal(true, repaintClock, onComplete);
 }
 
-export function launchDogReverse(onComplete?: () => void): void {
-  launchDogHorizontal(false, onComplete);
+export function launchDogReverse(repaintClock: () => void, onComplete?: () => void): void {
+  launchDogHorizontal(false, repaintClock, onComplete);
 }
 
 // --- Front-facing dog (runs toward camera) ---
 
-function drawFrontDog(c: CanvasRenderingContext2D, cx: number, cy: number, legPhase: number): void {
-  c.save();
-  c.translate(cx, cy);
-
-  const legSwing = Math.sin(legPhase) * 12;
-
+function drawFrontDogLegs(c: CanvasRenderingContext2D, legSwing: number): void {
   // Back legs (behind body)
   c.fillStyle = COLORS.dogDark;
   for (const side of [-1, 1]) {
@@ -198,7 +200,9 @@ function drawFrontDog(c: CanvasRenderingContext2D, cx: number, cy: number, legPh
   c.beginPath();
   c.ellipse(0, 8 * S, 12 * S, 10 * S, 0, 0, Math.PI * 2);
   c.fill();
+}
 
+function drawFrontDogHead(c: CanvasRenderingContext2D): void {
   // Head
   c.fillStyle = COLORS.dog;
   c.beginPath();
@@ -220,7 +224,7 @@ function drawFrontDog(c: CanvasRenderingContext2D, cx: number, cy: number, legPh
   c.fill();
 
   // Eyes
-  c.fillStyle = "#222";
+  c.fillStyle = COLORS.dogEye;
   for (const side of [-1, 1]) {
     c.beginPath();
     c.arc(side * 7 * S, -24 * S, 3.5 * S, 0, Math.PI * 2);
@@ -237,7 +241,7 @@ function drawFrontDog(c: CanvasRenderingContext2D, cx: number, cy: number, legPh
   c.fill();
 
   // Nose
-  c.fillStyle = "#222";
+  c.fillStyle = COLORS.dogEye;
   c.beginPath();
   c.ellipse(0, -15 * S, 4 * S, 3 * S, 0, 0, Math.PI * 2);
   c.fill();
@@ -247,11 +251,20 @@ function drawFrontDog(c: CanvasRenderingContext2D, cx: number, cy: number, legPh
   c.beginPath();
   c.ellipse(3 * S, -8 * S, 4 * S, 7 * S, 0.15, 0, Math.PI * 2);
   c.fill();
+}
+
+function drawFrontDog(c: CanvasRenderingContext2D, cx: number, cy: number, legPhase: number): void {
+  c.save();
+  c.translate(cx, cy);
+
+  const legSwing = Math.sin(legPhase) * 12;
+  drawFrontDogLegs(c, legSwing);
+  drawFrontDogHead(c);
 
   c.restore();
 }
 
-export function launchDogApproach(onComplete?: () => void): void {
+export function launchDogApproach(repaintClock: () => void, onComplete?: () => void): void {
   const screenW = window.innerWidth;
   const screenH = window.innerHeight;
   const startScale = 0.3;
@@ -260,7 +273,7 @@ export function launchDogApproach(onComplete?: () => void): void {
   const endY = -200;
   const cx = screenW / 2;
 
-  drawClockFace();
+  repaintClock();
 
   runAnimation(
     ANIM.dogApproachFrames,
@@ -291,17 +304,31 @@ export function launchDogApproach(onComplete?: () => void): void {
 
 // --- Sad dog (sits on clock face and bobs head) ---
 
-function drawSadDog(c: CanvasRenderingContext2D, cx: number, cy: number, headBob: number): void {
-  c.save();
-  c.translate(cx, cy);
-
-  // Body
+function drawSadDogBody(c: CanvasRenderingContext2D): void {
   c.fillStyle = COLORS.dog;
   c.beginPath();
   c.ellipse(0, 4 * S, 24 * S, 20 * S, 0, 0, Math.PI * 2);
   c.fill();
 
-  // Head
+  // Front paws
+  for (const side of [-1, 1]) {
+    c.beginPath();
+    c.ellipse(side * 10 * S, 22 * S, 6 * S, 4 * S, 0, 0, Math.PI * 2);
+    c.fill();
+  }
+
+  // Drooping tail
+  c.strokeStyle = COLORS.dog;
+  c.lineWidth = 5 * S;
+  c.lineCap = "round";
+  c.beginPath();
+  c.moveTo(-20 * S, 10 * S);
+  c.quadraticCurveTo(-34 * S, 18 * S, -30 * S, 26 * S);
+  c.stroke();
+}
+
+function drawSadDogHead(c: CanvasRenderingContext2D, headBob: number): void {
+  c.fillStyle = COLORS.dog;
   c.beginPath();
   c.ellipse(0, -22 * S + headBob, 16 * S, 14 * S, 0, 0, Math.PI * 2);
   c.fill();
@@ -315,7 +342,7 @@ function drawSadDog(c: CanvasRenderingContext2D, cx: number, cy: number, headBob
   }
 
   // Half-closed eyes
-  c.fillStyle = "#222";
+  c.fillStyle = COLORS.dogEye;
   for (const side of [-1, 1]) {
     c.beginPath();
     c.ellipse(side * 6 * S, -24 * S + headBob, 3 * S, 1.5 * S, 0, 0, Math.PI * 2);
@@ -333,33 +360,16 @@ function drawSadDog(c: CanvasRenderingContext2D, cx: number, cy: number, headBob
   }
 
   // Nose
-  c.fillStyle = "#333";
+  c.fillStyle = COLORS.dogNose;
   c.beginPath();
   c.arc(0, -17 * S + headBob, 3 * S, 0, Math.PI * 2);
   c.fill();
 
   // Sad mouth
-  c.strokeStyle = "#333";
+  c.strokeStyle = COLORS.dogNose;
   c.lineWidth = 2 * S;
   c.beginPath();
   c.arc(0, -11 * S + headBob, 5 * S, Math.PI + 0.3, Math.PI * 2 - 0.3);
-  c.stroke();
-
-  // Front paws
-  c.fillStyle = COLORS.dog;
-  for (const side of [-1, 1]) {
-    c.beginPath();
-    c.ellipse(side * 10 * S, 22 * S, 6 * S, 4 * S, 0, 0, Math.PI * 2);
-    c.fill();
-  }
-
-  // Drooping tail
-  c.strokeStyle = COLORS.dog;
-  c.lineWidth = 5 * S;
-  c.lineCap = "round";
-  c.beginPath();
-  c.moveTo(-20 * S, 10 * S);
-  c.quadraticCurveTo(-34 * S, 18 * S, -30 * S, 26 * S);
   c.stroke();
 
   // Tear drop
@@ -369,21 +379,29 @@ function drawSadDog(c: CanvasRenderingContext2D, cx: number, cy: number, headBob
   c.ellipse(10 * S, -18 * S + headBob, 2 * S, 3 * S, 0, 0, Math.PI * 2);
   c.fill();
   c.globalAlpha = 1;
+}
+
+function drawSadDog(c: CanvasRenderingContext2D, cx: number, cy: number, headBob: number): void {
+  c.save();
+  c.translate(cx, cy);
+
+  drawSadDogBody(c);
+  drawSadDogHead(c, headBob);
 
   c.restore();
 }
 
-export function launchSadDog(onComplete?: () => void): void {
+export function launchSadDog(repaintClock: () => void, onComplete?: () => void): void {
   runAnimation(
     ANIM.sadDogFrames,
     sadDogAnim,
     (frame) => {
-      drawClockFace();
+      repaintClock();
       const headBob = Math.sin(frame * 0.1) * 3;
       drawSadDog(clockCtx, CLOCK.center, CLOCK.center + 20, headBob);
     },
     () => {
-      drawClockFace();
+      repaintClock();
       onComplete?.();
     },
   );

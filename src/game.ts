@@ -3,16 +3,16 @@ import { RULES, ANIM } from "./constants";
 import { onColorSchemeChange } from "./colors";
 import { dom } from "./dom";
 import { state } from "./state";
-import { formatTime } from "./utils";
-import { drawClockAt, animateToTime } from "./clock";
+import { formatTime, randomInt, randomChoice } from "./utils";
+import { drawClockFace, drawClockAt, animateToTime } from "./clock";
 import { generateOptions } from "./options";
+import { pickRandomMinutes } from "./difficulty";
 import { launchConfetti, launchRain } from "./effects";
-import { launchDog, launchDogReverse, launchDogApproach, launchSadDog } from "./dog";
+import { launchDog, launchDogReverse, launchDogApproach, launchSadDog, stopDogAnimations } from "./dog";
 import { playCorrectSound, playIncorrectSound, playWhineSound, ensureAudioContext } from "./audio";
 import { updateRecordBanner } from "./records";
-import { updateElapsedDisplay, stopElapsedTimer, startRoundTimer, stopRoundTimer } from "./timer";
+import { updateElapsedDisplay, stopElapsedTimer, startRoundTimer, stopRoundTimer, setupTimerListeners } from "./timer";
 import { showWinScreen, showLoseScreen, stopScreenEffects } from "./screens";
-import { stopDogAnimations } from "./dog";
 
 const HEART = "❤️";
 const BLACK_HEART = "🖤";
@@ -22,6 +22,11 @@ const CROSS = "✘";
 function updateMistakesDisplay(): void {
   const remaining = RULES.maxMistakes - state.mistakes;
   dom.mistakes.textContent = HEART.repeat(remaining) + BLACK_HEART.repeat(state.mistakes);
+}
+
+function setFeedback(text: string, className: string): void {
+  dom.feedback.textContent = text;
+  dom.feedback.className = className;
 }
 
 // --- Options panel ---
@@ -78,11 +83,8 @@ function renderOptions(): void {
 // --- Pick a new random time for the round ---
 
 function pickRandomTime(): void {
-  state.targetHours = Math.floor(Math.random() * 12) + 1;
-  state.targetMinutes =
-    state.score >= RULES.randomMinutesAt
-      ? Math.floor(Math.random() * 60)
-      : Math.floor(Math.random() * 12) * 5;
+  state.targetHours = randomInt(1, 13);
+  state.targetMinutes = pickRandomMinutes(state.score);
 }
 
 // --- Controls lock/unlock ---
@@ -110,13 +112,13 @@ const happyDogAnims = [launchDog, launchDogReverse, launchDogApproach];
 function transitionToNextRound(): void {
   lockControls();
   pickRandomTime();
-  const anim = happyDogAnims[Math.floor(Math.random() * happyDogAnims.length)];
-  anim(() => animateToTime(state.targetHours, state.targetMinutes, unlockControls));
+  const anim = randomChoice(happyDogAnims);
+  anim(drawClockFace, () => animateToTime(state.targetHours, state.targetMinutes, unlockControls));
 }
 
 function sadDogTransition(): void {
   lockControls();
-  launchSadDog(() => {
+  launchSadDog(drawClockFace, () => {
     pickRandomTime();
     animateToTime(state.targetHours, state.targetMinutes, unlockControls);
   });
@@ -141,8 +143,7 @@ function handleCorrect(btn: HTMLButtonElement | null): void {
     return;
   }
 
-  dom.feedback.textContent = `${CHECK} Correct!`;
-  dom.feedback.className = "correct";
+  setFeedback(`${CHECK} Correct!`, "correct");
   playCorrectSound();
   dom.answer.value = "";
   launchConfetti();
@@ -161,8 +162,7 @@ function handleMistake(feedbackText: string, btn: HTMLButtonElement | null): voi
   state.mistakes++;
   updateMistakesDisplay();
 
-  dom.feedback.textContent = feedbackText;
-  dom.feedback.className = "incorrect";
+  setFeedback(feedbackText, "incorrect");
   launchRain();
   playIncorrectSound();
   playWhineSound();
@@ -200,21 +200,25 @@ function handleOptionClick(label: string, btn: HTMLButtonElement): void {
 
 // --- Text input answer ---
 
+function parseTimeInput(raw: string): { h: number; m: number } | null {
+  const match = raw.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  const h = parseInt(match[1], 10);
+  const m = parseInt(match[2], 10);
+  if (h < 1 || h > 12 || m < 0 || m > 59) return null;
+  return { h, m };
+}
+
 function checkAnswer(): void {
   if (state.transitioning) return;
 
-  const raw = dom.answer.value.trim();
-  const match = raw.match(/^(\d{1,2}):(\d{2})$/);
-  if (!match) {
-    dom.feedback.textContent = "Enter time as H:MM (e.g. 7:30)";
-    dom.feedback.className = "incorrect";
+  const parsed = parseTimeInput(dom.answer.value.trim());
+  if (!parsed) {
+    setFeedback("Enter time as H:MM (e.g. 7:30)", "incorrect");
     return;
   }
 
-  const guessH = parseInt(match[1], 10);
-  const guessM = parseInt(match[2], 10);
-
-  if (guessH === state.targetHours && guessM === state.targetMinutes) {
+  if (parsed.h === state.targetHours && parsed.m === state.targetMinutes) {
     handleCorrect(null);
   } else {
     handleIncorrect(null);
@@ -223,7 +227,7 @@ function checkAnswer(): void {
 
 // --- Reset ---
 
-function resetGame(): void {
+function cleanupAnimations(): void {
   stopRoundTimer();
   stopScreenEffects();
   stopDogAnimations();
@@ -231,6 +235,10 @@ function resetGame(): void {
     cancelAnimationFrame(state.spinAnimId);
     state.spinAnimId = null;
   }
+}
+
+function resetGame(): void {
+  cleanupAnimations();
   state.score = 0;
   state.mistakes = 0;
   state.elapsedMs = 0;
@@ -238,8 +246,7 @@ function resetGame(): void {
   updateElapsedDisplay();
   dom.score.textContent = `Score: 0/${RULES.winningScore}`;
   updateMistakesDisplay();
-  dom.feedback.textContent = "";
-  dom.feedback.className = "";
+  setFeedback("", "");
   dom.winScreen.hidden = true;
   dom.loseScreen.hidden = true;
   dom.gameArea.hidden = false;
@@ -252,6 +259,7 @@ function resetGame(): void {
 export function initGame(): void {
   updateRecordBanner();
   updateMistakesDisplay();
+  setupTimerListeners();
 
   // Warm up AudioContext on first user interaction (required by iOS Safari)
   document.addEventListener("click", ensureAudioContext, { once: true });

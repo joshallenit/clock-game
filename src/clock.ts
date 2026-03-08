@@ -1,9 +1,10 @@
 // Clock canvas: draw face/hands/numbers, animated spin transition between rounds.
-import { CLOCK, RULES, ANIM } from "./constants";
+import { CLOCK, ANIM } from "./constants";
 import { COLORS } from "./colors";
 import { dom } from "./dom";
 import { state } from "./state";
 import { getContext2D, formatTime } from "./utils";
+import { shouldShowHourNumber } from "./difficulty";
 
 const ctx = getContext2D(dom.clock);
 
@@ -13,11 +14,11 @@ dom.clock.width = CLOCK.size * dpr;
 dom.clock.height = CLOCK.size * dpr;
 ctx.scale(dpr, dpr);
 
-export function updateClockAriaLabel(h: number, m: number): void {
+function updateClockAriaLabel(h: number, m: number): void {
   dom.clock.setAttribute("aria-label", `Analog clock showing ${formatTime(h, m)}`);
 }
 
-export function drawHand(angle: number, length: number, width: number, color: string): void {
+function drawHand(angle: number, length: number, width: number, color: string): void {
   ctx.beginPath();
   ctx.moveTo(CLOCK.center, CLOCK.center);
   ctx.lineTo(CLOCK.center + length * Math.cos(angle), CLOCK.center + length * Math.sin(angle));
@@ -84,8 +85,7 @@ export function drawClockFace(): void {
   ctx.textBaseline = "middle";
   const numRadius = CLOCK.radius - CLOCK.numberInset;
   for (let i = 1; i <= 12; i++) {
-    if (state.score >= RULES.hideAllNumbersAt) break;
-    if (state.score >= RULES.hideNonQuarterNumbersAt && i % 3 !== 0) continue;
+    if (!shouldShowHourNumber(state.score, i)) continue;
     const angle = (i * Math.PI) / 6 - Math.PI / 2;
     ctx.fillText(
       String(i),
@@ -95,7 +95,7 @@ export function drawClockFace(): void {
   }
 }
 
-export function drawCenterDot(): void {
+function drawCenterDot(): void {
   ctx.beginPath();
   ctx.arc(CLOCK.center, CLOCK.center, CLOCK.centerDotRadius, 0, Math.PI * 2);
   ctx.fillStyle = COLORS.accent;

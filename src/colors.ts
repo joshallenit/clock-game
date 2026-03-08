@@ -14,6 +14,8 @@ interface ColorPalette {
   dogDark: string;
   dogChest: string;
   dogTongue: string;
+  dogEye: string;
+  dogNose: string;
   rain: string;
 }
 
@@ -30,6 +32,8 @@ const DARK_PALETTE: ColorPalette = {
   dogDark: "#9a6530",
   dogChest: "#d4975a",
   dogTongue: "#e63946",
+  dogEye: "#222",
+  dogNose: "#333",
   rain: "#6899cc",
 };
 
@@ -46,6 +50,8 @@ const LIGHT_PALETTE: ColorPalette = {
   dogDark: "#9a6530",
   dogChest: "#d4975a",
   dogTongue: "#dc2626",
+  dogEye: "#222",
+  dogNose: "#333",
   rain: "#3b82f6",
 };
 

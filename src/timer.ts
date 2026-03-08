@@ -1,8 +1,8 @@
 // Elapsed timer (total game) + per-round countdown timer. All state lives in state.ts.
-import { getTimeLimitMs } from "./constants";
 import { dom } from "./dom";
 import { state } from "./state";
 import { formatElapsed } from "./utils";
+import { getTimeLimitMs } from "./difficulty";
 
 // --- Elapsed timer (tracks total game time) ---
 
@@ -52,7 +52,7 @@ function clearRoundTimeout(): void {
 // When the tab becomes visible again, re-sync the authoritative timeout
 // so it fires at the correct wall-clock time (browsers throttle setInterval
 // and setTimeout in background tabs, which could delay the timeout).
-document.addEventListener("visibilitychange", () => {
+function handleVisibilityChange(): void {
   if (document.hidden || !state.activeTimeoutCallback) return;
 
   const elapsed = Date.now() - state.roundStart;
@@ -75,7 +75,11 @@ document.addEventListener("visibilitychange", () => {
     }, state.remainingMs);
   }
   updateTimerDisplay();
-});
+}
+
+export function setupTimerListeners(): void {
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+}
 
 export function startRoundTimer(onTimeout: () => void): void {
   if (state.timerInterval) clearInterval(state.timerInterval);

@@ -45,9 +45,3 @@ export const ANIM = {
   optionRevealStaggerSec: 0.06,
 } as const;
 
-/** Per-round countdown duration. Decreases as score increases. */
-export function getTimeLimitMs(score: number): number {
-  if (score >= 9) return 10_000;
-  if (score >= 8) return 20_000;
-  return Math.max(30_000, 60_000 - score * 5_000);
-}

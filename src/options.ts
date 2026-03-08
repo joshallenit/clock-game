@@ -1,7 +1,7 @@
 // Generate 6 multiple-choice time answers: correct, swapped, nearby, and random fill.
 import { RULES } from "./constants";
 import { state } from "./state";
-import { formatTime } from "./utils";
+import { formatTime, randomInt } from "./utils";
 import type { TimeOption } from "./types";
 
 function wrapHour(h: number): number {
@@ -46,8 +46,8 @@ export function generateOptions(): TimeOption[] {
 
   // Fill remaining slots with random times
   while (unique.length < RULES.optionCount) {
-    const rh = Math.floor(Math.random() * 12) + 1;
-    const rm = Math.floor(Math.random() * 12) * 5;
+    const rh = randomInt(1, 13);
+    const rm = randomInt(0, 12) * 5;
     const rl = formatTime(rh, rm);
     if (!seen[rl]) {
       seen[rl] = true;
@@ -57,7 +57,7 @@ export function generateOptions(): TimeOption[] {
 
   // Fisher-Yates shuffle
   for (let i = unique.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = randomInt(0, i + 1);
     [unique[i], unique[j]] = [unique[j], unique[i]];
   }
 

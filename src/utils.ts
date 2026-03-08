@@ -21,3 +21,11 @@ export function getContext2D(canvas: HTMLCanvasElement): CanvasRenderingContext2
 export function prefersReducedMotion(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
+
+export function randomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+export function randomChoice<T>(arr: readonly T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}

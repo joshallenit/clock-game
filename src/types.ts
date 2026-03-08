@@ -7,8 +7,8 @@ export interface GameState {
   remainingMs: number;
   elapsedMs: number;
   transitioning: boolean;
-  timerInterval: ReturnType<typeof setInterval> | null;
-  elapsedInterval: ReturnType<typeof setInterval> | null;
+  timerInterval: IntervalId;
+  elapsedInterval: IntervalId;
   /** The formatted correct answer for the current round (e.g. "7:30"). */
   correctLabel: string;
   /** Active requestAnimationFrame ID for the clock spin transition. */
@@ -19,7 +19,7 @@ export interface GameState {
   roundStart: number;
   roundDuration: number;
   /** setTimeout ID for the authoritative round timeout (fires even if setInterval drifts). */
-  roundTimeoutId: ReturnType<typeof setTimeout> | null;
+  roundTimeoutId: TimeoutId;
   /** Callback to invoke when the round timer expires. Stored so the visibilitychange handler can call it if the tab was backgrounded past the deadline. */
   activeTimeoutCallback: (() => void) | null;
 }
@@ -89,3 +89,7 @@ export interface DailyRecord {
 export interface AnimRef {
   id: number | null;
 }
+
+/** Shorthand for timer handle types used across modules. */
+export type IntervalId = ReturnType<typeof setInterval> | null;
+export type TimeoutId = ReturnType<typeof setTimeout> | null;
