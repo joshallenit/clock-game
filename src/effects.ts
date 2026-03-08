@@ -1,4 +1,6 @@
-import { CONFETTI_COLORS, COLORS, ANIM, dom } from "./config";
+import { ANIM } from "./constants";
+import { CONFETTI_COLORS, COLORS } from "./colors";
+import { dom } from "./dom";
 import { getContext2D, prefersReducedMotion } from "./utils";
 import type { ConfettiParticle, RainParticle } from "./types";
 

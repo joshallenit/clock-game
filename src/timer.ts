@@ -1,4 +1,6 @@
-import { getTimeLimitMs, dom, state } from "./config";
+import { getTimeLimitMs } from "./constants";
+import { dom } from "./dom";
+import { state } from "./state";
 import { formatElapsed } from "./utils";
 
 // --- Elapsed timer (tracks total game time) ---

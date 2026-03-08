@@ -1,22 +1,8 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from "vitest";
+import { setupTestDOM } from "./test-dom";
 
-// Minimal DOM for module imports
 beforeAll(() => {
-  document.body.innerHTML = `
-    <div id="timer-group"><div id="elapsed"></div><div id="record-banner"></div></div>
-    <div id="name-modal"><div class="modal-box"><div id="new-record-time"></div><input id="name-input"><button id="name-submit-btn"></button></div></div>
-    <canvas id="confetti-canvas" width="1000" height="1000"></canvas>
-    <main id="game-area">
-      <div id="game-layout">
-        <div id="left-panel"><div id="timer"></div><div id="score"></div><div id="mistakes"></div></div>
-        <canvas id="clock" width="500" height="500"></canvas>
-        <div id="right-panel"><div id="options-panel"></div><div id="input-row"><input id="answer"><button id="submit-btn"></button></div></div>
-      </div>
-      <div id="feedback"></div>
-    </main>
-    <section id="win-screen"><button id="play-again-btn"></button></section>
-    <section id="lose-screen"><div class="lose-box"><span id="final-score-value"></span></div><button id="try-again-btn"></button></section>
-  `;
+  setupTestDOM();
 });
 
 describe("timer", () => {
@@ -29,7 +15,8 @@ describe("timer", () => {
   });
 
   it("updateElapsedDisplay sets elapsed text", async () => {
-    const { state, dom } = await import("../config");
+    const { state } = await import("../state");
+    const { dom } = await import("../dom");
     const { updateElapsedDisplay } = await import("../timer");
 
     state.elapsedMs = 5200;
@@ -38,7 +25,8 @@ describe("timer", () => {
   });
 
   it("startRoundTimer initializes countdown display", async () => {
-    const { state, dom } = await import("../config");
+    const { state } = await import("../state");
+    const { dom } = await import("../dom");
     const { startRoundTimer, stopRoundTimer } = await import("../timer");
 
     state.score = 0;
@@ -52,7 +40,7 @@ describe("timer", () => {
   });
 
   it("stopRoundTimer clears the interval", async () => {
-    const { state } = await import("../config");
+    const { state } = await import("../state");
     const { startRoundTimer, stopRoundTimer } = await import("../timer");
 
     state.score = 0;
@@ -66,7 +54,7 @@ describe("timer", () => {
   });
 
   it("calls onTimeout when time runs out", async () => {
-    const { state } = await import("../config");
+    const { state } = await import("../state");
     const { startRoundTimer } = await import("../timer");
 
     state.score = 0;
@@ -78,7 +66,8 @@ describe("timer", () => {
   });
 
   it("timer adds warning class at 50% remaining", async () => {
-    const { state, dom } = await import("../config");
+    const { state } = await import("../state");
+    const { dom } = await import("../dom");
     const { startRoundTimer, stopRoundTimer } = await import("../timer");
 
     state.score = 0; // 60s limit
@@ -92,7 +81,8 @@ describe("timer", () => {
   });
 
   it("timer adds critical class at 25% remaining", async () => {
-    const { state, dom } = await import("../config");
+    const { state } = await import("../state");
+    const { dom } = await import("../dom");
     const { startRoundTimer, stopRoundTimer } = await import("../timer");
 
     state.score = 0; // 60s limit

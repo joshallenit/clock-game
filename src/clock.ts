@@ -1,9 +1,12 @@
-import { CLOCK, RULES, COLORS, dom, state } from "./config";
+import { CLOCK, RULES } from "./constants";
+import { COLORS } from "./colors";
+import { dom } from "./dom";
+import { state } from "./state";
 import { getContext2D, formatTime } from "./utils";
 
 const ctx = getContext2D(dom.clock);
 
-// HiDPI canvas support — scale backing store for crisp rendering on Retina displays
+// HiDPI canvas support -- scale backing store for crisp rendering on Retina displays
 const dpr = window.devicePixelRatio || 1;
 dom.clock.width = CLOCK.size * dpr;
 dom.clock.height = CLOCK.size * dpr;

@@ -1,52 +1,8 @@
 import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
-
-// Mock canvas getContext before any module loads
-HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
-  beginPath: vi.fn(),
-  moveTo: vi.fn(),
-  lineTo: vi.fn(),
-  arc: vi.fn(),
-  ellipse: vi.fn(),
-  fill: vi.fn(),
-  stroke: vi.fn(),
-  fillRect: vi.fn(),
-  fillText: vi.fn(),
-  clearRect: vi.fn(),
-  save: vi.fn(),
-  restore: vi.fn(),
-  translate: vi.fn(),
-  rotate: vi.fn(),
-  scale: vi.fn(),
-  setTransform: vi.fn(),
-  quadraticCurveTo: vi.fn(),
-  fillStyle: "",
-  strokeStyle: "",
-  lineWidth: 0,
-  lineCap: "butt",
-  font: "",
-  textAlign: "start",
-  textBaseline: "alphabetic",
-  globalAlpha: 1,
-  shadowColor: "",
-  shadowBlur: 0,
-}) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+import { setupTestDOM } from "./test-dom";
 
 beforeAll(() => {
-  document.body.innerHTML = `
-    <div id="timer-group"><div id="elapsed"></div><div id="record-banner"></div></div>
-    <div id="name-modal" hidden><div class="modal-box"><div id="new-record-time"></div><input id="name-input"><button id="name-submit-btn"></button></div></div>
-    <canvas id="confetti-canvas" width="1000" height="1000"></canvas>
-    <main id="game-area">
-      <div id="game-layout">
-        <div id="left-panel"><div id="timer"></div><div id="score"></div><div id="mistakes"></div></div>
-        <canvas id="clock" width="500" height="500"></canvas>
-        <div id="right-panel"><div id="options-panel"></div><div id="input-row"><input id="answer"><button id="submit-btn"></button></div></div>
-      </div>
-      <div id="feedback"></div>
-    </main>
-    <section id="win-screen" hidden><button id="play-again-btn"></button></section>
-    <section id="lose-screen" hidden><div class="lose-box"><span id="final-score-value"></span></div><button id="try-again-btn"></button></section>
-  `;
+  setupTestDOM();
 });
 
 describe("game", () => {
@@ -56,7 +12,8 @@ describe("game", () => {
   });
 
   it("initGame sets up initial state", async () => {
-    const { state, dom } = await import("../config");
+    const { state } = await import("../state");
+    const { dom } = await import("../dom");
     const { initGame } = await import("../game");
 
     state.score = 0;
@@ -70,7 +27,7 @@ describe("game", () => {
   });
 
   it("picks valid target time values", async () => {
-    const { state } = await import("../config");
+    const { state } = await import("../state");
     const { initGame } = await import("../game");
 
     state.score = 0;
@@ -84,7 +41,7 @@ describe("game", () => {
   });
 
   it("generates 5-minute increment times at low scores", async () => {
-    const { state } = await import("../config");
+    const { state } = await import("../state");
     const { initGame } = await import("../game");
 
     for (let i = 0; i < 20; i++) {
@@ -96,7 +53,7 @@ describe("game", () => {
   });
 
   it("win and lose screens start hidden", async () => {
-    const { dom } = await import("../config");
+    const { dom } = await import("../dom");
     expect(dom.winScreen.hidden).toBe(true);
     expect(dom.loseScreen.hidden).toBe(true);
   });

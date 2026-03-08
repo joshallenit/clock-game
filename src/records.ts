@@ -1,4 +1,5 @@
-import { dom, state } from "./config";
+import { dom } from "./dom";
+import { state } from "./state";
 import { formatElapsed, escapeHtml } from "./utils";
 import type { DailyRecord } from "./types";
 
@@ -29,7 +30,7 @@ function saveRecord(ms: number, name: string): void {
   try {
     localStorage.setItem(getTodayKey(), JSON.stringify({ time: ms, name }));
   } catch {
-    // Storage full or unavailable (e.g. private browsing) — silently ignore
+    // Storage full or unavailable (e.g. private browsing) -- silently ignore
   }
 }
 

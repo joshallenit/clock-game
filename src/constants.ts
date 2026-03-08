@@ -1,0 +1,47 @@
+// --- Clock canvas geometry ---
+
+export const CLOCK = {
+  size: 500,
+  center: 250,
+  radius: 230,
+  tickOuterInset: 8,
+  hourTickInnerInset: 25,
+  minuteTickInnerInset: 12,
+  numberInset: 45,
+  hourHand: { lengthRatio: 0.5, width: 6 },
+  minuteHand: { lengthRatio: 0.7, width: 4 },
+  centerDotRadius: 6,
+} as const;
+
+// --- Game rules and difficulty ---
+
+export const RULES = {
+  winningScore: 10,
+  maxMistakes: 5,
+  optionCount: 6,
+  hideNonQuarterNumbersAt: 4,
+  hideAllNumbersAt: 6,
+  randomMinutesAt: 7,
+  hintPenaltyMs: 30_000,
+} as const;
+
+// --- Animation frame counts and effect settings ---
+
+export const ANIM = {
+  spinFrames: 120,
+  dogRunFrames: 180,
+  dogApproachFrames: 200,
+  sadDogFrames: 120,
+  confettiCount: 200,
+  rainCount: 200,
+  rainShakeFrames: 20,
+  winConfettiBursts: 5,
+  loseRainWaves: 3,
+} as const;
+
+/** Per-round countdown duration. Decreases as score increases. */
+export function getTimeLimitMs(score: number): number {
+  if (score >= 9) return 10_000;
+  if (score >= 8) return 20_000;
+  return Math.max(30_000, 60_000 - score * 5_000);
+}

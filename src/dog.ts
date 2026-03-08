@@ -1,4 +1,6 @@
-import { CLOCK, COLORS, ANIM, dom } from "./config";
+import { CLOCK, ANIM } from "./constants";
+import { COLORS } from "./colors";
+import { dom } from "./dom";
 import { getContext2D } from "./utils";
 import { drawClockFace } from "./clock";
 import type { AnimRef } from "./types";

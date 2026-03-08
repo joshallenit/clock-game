@@ -1,5 +1,5 @@
 import "./styles.css";
-import { dom } from "./config";
+import { dom } from "./dom";
 import { submitName } from "./records";
 import { initGame } from "./game";
 

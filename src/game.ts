@@ -1,4 +1,7 @@
-import { RULES, CLOCK, COLORS, ANIM, dom, state, onColorSchemeChange } from "./config";
+import { RULES, CLOCK, ANIM } from "./constants";
+import { COLORS, onColorSchemeChange } from "./colors";
+import { dom } from "./dom";
+import { state } from "./state";
 import { formatTime } from "./utils";
 import { drawClockFace, drawHand, drawCenterDot, drawClockAt, updateClockAriaLabel } from "./clock";
 import { generateOptions } from "./options";

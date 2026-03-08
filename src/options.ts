@@ -1,4 +1,5 @@
-import { RULES, state } from "./config";
+import { RULES } from "./constants";
+import { state } from "./state";
 import { formatTime } from "./utils";
 import type { TimeOption } from "./types";
 
