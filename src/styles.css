@@ -1,4 +1,8 @@
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
 body {
   display: flex;
@@ -19,7 +23,10 @@ body {
   margin: 16px 0;
 }
 
-canvas { display: block; position: relative; }
+canvas {
+  display: block;
+  position: relative;
+}
 
 /* --- Game Layout --- */
 
@@ -62,7 +69,9 @@ canvas { display: block; position: relative; }
   cursor: pointer;
   min-width: 140px;
   text-align: center;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 
 .option-btn.hint-btn {
@@ -71,22 +80,50 @@ canvas { display: block; position: relative; }
   opacity: 0;
   animation: hintFadeIn 0.8s ease 5s both;
 }
-.option-btn.hint-btn:hover { background: #1f3460; border-color: #facc15; color: #facc15; }
-@keyframes hintFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.option-btn.hint-btn:hover {
+  background: #1f3460;
+  border-color: #facc15;
+  color: #facc15;
 }
-.option-btn:hover { background: #1f3460; border-color: #a2d2ff; }
+@keyframes hintFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.option-btn:hover {
+  background: #1f3460;
+  border-color: #a2d2ff;
+}
 .option-btn.reveal {
   animation: revealBtn 0.3s ease both;
 }
 @keyframes revealBtn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-.option-btn:disabled { opacity: 0.5; cursor: default; }
-.option-btn.correct-pick { background: #166534; border-color: #4ade80; color: #4ade80; }
-.option-btn.incorrect-pick { background: #7f1d1d; border-color: #e63946; color: #e63946; }
+.option-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.option-btn.correct-pick {
+  background: #166534;
+  border-color: #4ade80;
+  color: #4ade80;
+}
+.option-btn.incorrect-pick {
+  background: #7f1d1d;
+  border-color: #e63946;
+  color: #e63946;
+}
 
 /* --- Confetti Overlay --- */
 
@@ -123,7 +160,9 @@ canvas { display: block; position: relative; }
   width: 120px;
 }
 
-#answer::placeholder { color: #666; }
+#answer::placeholder {
+  color: #666;
+}
 
 #submit-btn {
   padding: 10px 20px;
@@ -136,9 +175,14 @@ canvas { display: block; position: relative; }
   font-weight: bold;
 }
 
-#submit-btn:hover { background: #81bfff; }
+#submit-btn:hover {
+  background: #81bfff;
+}
 
-#score { font-size: 22px; font-weight: bold; }
+#score {
+  font-size: 22px;
+  font-weight: bold;
+}
 
 #feedback {
   font-size: 20px;
@@ -154,11 +198,19 @@ canvas { display: block; position: relative; }
   font-variant-numeric: tabular-nums;
 }
 
-#timer.warning { color: #f59e0b; }
-#timer.critical { color: #e63946; }
+#timer.warning {
+  color: #f59e0b;
+}
+#timer.critical {
+  color: #e63946;
+}
 
-.correct { color: #4ade80; }
-.incorrect { color: #e63946; }
+.correct {
+  color: #4ade80;
+}
+.incorrect {
+  color: #e63946;
+}
 
 /* --- Win Screen --- */
 
@@ -183,13 +235,24 @@ canvas { display: block; position: relative; }
 }
 
 @keyframes shimmer {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.8); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 #win-screen .prize-box {
@@ -238,7 +301,9 @@ canvas { display: block; position: relative; }
   transition: background 0.2s;
 }
 
-#play-again-btn:hover { background: #fbbf24; }
+#play-again-btn:hover {
+  background: #fbbf24;
+}
 
 /* --- Lose Screen --- */
 
@@ -302,7 +367,9 @@ canvas { display: block; position: relative; }
   transition: background 0.2s;
 }
 
-#try-again-btn:hover { background: #c1121f; }
+#try-again-btn:hover {
+  background: #c1121f;
+}
 
 #mistakes {
   font-size: 18px;
@@ -342,8 +409,11 @@ canvas { display: block; position: relative; }
 #name-modal {
   display: none;
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.7);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
   z-index: 200;
   justify-content: center;
   align-items: center;
@@ -401,4 +471,6 @@ canvas { display: block; position: relative; }
   margin-left: 8px;
 }
 
-#name-submit-btn:hover { background: #fbbf24; }
+#name-submit-btn:hover {
+  background: #fbbf24;
+}

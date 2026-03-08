@@ -1,14 +1,19 @@
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const audioCtx = new AudioContext();
 
-function resumeAudio() {
+function resumeAudio(): void {
   if (audioCtx.state === "suspended") audioCtx.resume();
 }
 
 document.addEventListener("click", resumeAudio);
 document.addEventListener("keydown", resumeAudio);
 
-// Helper: create an oscillator with gain envelope
-function playTone(freq, type, startTime, duration, volume) {
+function playTone(
+  freq: number,
+  type: OscillatorType,
+  startTime: number,
+  duration: number,
+  volume: number,
+): void {
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = type;
@@ -19,12 +24,11 @@ function playTone(freq, type, startTime, duration, volume) {
   gain.connect(audioCtx.destination);
   osc.start(startTime);
   osc.stop(startTime + duration);
-  return { osc, gain };
 }
 
-export function playCorrectSound() {
+export function playCorrectSound(): void {
   resumeAudio();
-  const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+  const notes = [523.25, 659.25, 783.99, 1046.5, 1318.51];
   const now = audioCtx.currentTime;
   notes.forEach((freq, i) => {
     playTone(freq, "triangle", now + i * 0.1, 0.6, 0.5);
@@ -32,19 +36,18 @@ export function playCorrectSound() {
   });
 }
 
-export function playIncorrectSound() {
+export function playIncorrectSound(): void {
   resumeAudio();
-  const notes = [392.00, 349.23, 311.13, 261.63];
+  const notes = [392.0, 349.23, 311.13, 261.63];
   const now = audioCtx.currentTime;
   notes.forEach((freq, i) => {
     playTone(freq, "sawtooth", now + i * 0.25, 0.8, 0.5);
     playTone(freq * 0.998, "sawtooth", now + i * 0.25, 0.8, 0.5);
   });
-  // Low rumble
   playTone(60, "sine", now, 1.5, 0.6);
 }
 
-export function playWhineSound() {
+export function playWhineSound(): void {
   resumeAudio();
   const now = audioCtx.currentTime;
 
@@ -81,14 +84,13 @@ export function playWhineSound() {
   osc2.stop(now + 1.0);
 }
 
-export function playGameOverSound() {
+export function playGameOverSound(): void {
   resumeAudio();
-  const notes = [293.66, 261.63, 220.00, 196.00, 146.83];
+  const notes = [293.66, 261.63, 220.0, 196.0, 146.83];
   const now = audioCtx.currentTime;
   notes.forEach((freq, i) => {
     playTone(freq, "sawtooth", now + i * 0.35, 1.2, 0.4);
     playTone(freq * 0.997, "sawtooth", now + i * 0.35, 1.2, 0.4);
   });
-  // Heavy low rumble
   playTone(40, "sine", now, 2.5, 0.7);
 }

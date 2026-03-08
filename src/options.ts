@@ -1,40 +1,40 @@
-import { OPTION_COUNT, state } from "./config.js";
-import { formatTime } from "./utils.js";
+import { RULES, state } from "./config";
+import { formatTime } from "./utils";
+import type { TimeOption } from "./types";
 
-// Keep hour in 1-12 range
-function wrapHour(h) {
+function wrapHour(h: number): number {
   return ((h - 1 + 12) % 12) + 1;
 }
 
-// "Swapped" reading: interpret minute hand as hour, hour hand as minutes
-function getSwappedTime(h, m) {
+/** "Swapped" reading: interpret minute hand as hour, hour hand as minutes. */
+function getSwappedTime(h: number, m: number): { h: number; m: number } {
   let swappedH = Math.floor(m / 5);
   if (swappedH === 0) swappedH = 12;
   const swappedM = Math.round(((h % 12) + m / 60) * 5) % 60;
   return { h: swappedH, m: swappedM };
 }
 
-function makeOption(h, m) {
+function makeOption(h: number, m: number): TimeOption {
   return { h, m, label: formatTime(h, m) };
 }
 
-// Generate 6 answer choices: correct, swapped, +/-1 hour variants, plus random fill
-export function generateOptions() {
+/** Generate 6 answer choices: correct, swapped, +/-1 hour variants, plus random fill. */
+export function generateOptions(): TimeOption[] {
   const { targetHours: h, targetMinutes: m } = state;
   const swapped = getSwappedTime(h, m);
 
-  const candidates = [
-    makeOption(h, m),                           // correct
-    makeOption(swapped.h, swapped.m),            // swapped reading
-    makeOption(wrapHour(h + 1), m),              // correct +1h
-    makeOption(wrapHour(h - 1), m),              // correct -1h
-    makeOption(wrapHour(swapped.h + 1), swapped.m), // swapped +1h
-    makeOption(wrapHour(swapped.h - 1), swapped.m), // swapped -1h
+  const candidates: TimeOption[] = [
+    makeOption(h, m),
+    makeOption(swapped.h, swapped.m),
+    makeOption(wrapHour(h + 1), m),
+    makeOption(wrapHour(h - 1), m),
+    makeOption(wrapHour(swapped.h + 1), swapped.m),
+    makeOption(wrapHour(swapped.h - 1), swapped.m),
   ];
 
   // Deduplicate by label
-  const seen = {};
-  const unique = [];
+  const seen: Record<string, boolean> = {};
+  const unique: TimeOption[] = [];
   for (const opt of candidates) {
     if (!seen[opt.label]) {
       seen[opt.label] = true;
@@ -43,7 +43,7 @@ export function generateOptions() {
   }
 
   // Fill remaining slots with random times
-  while (unique.length < OPTION_COUNT) {
+  while (unique.length < RULES.optionCount) {
     const rh = Math.floor(Math.random() * 12) + 1;
     const rm = Math.floor(Math.random() * 12) * 5;
     const rl = formatTime(rh, rm);

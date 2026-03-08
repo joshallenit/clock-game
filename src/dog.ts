@@ -1,32 +1,36 @@
-import {
-  CLOCK_CENTER, COLORS,
-  DOG_RUN_FRAMES, DOG_APPROACH_FRAMES, SAD_DOG_FRAMES,
-  dom,
-} from "./config.js";
-import { drawClockFace } from "./clock.js";
+import { CLOCK, COLORS, ANIM, dom } from "./config";
+import { drawClockFace } from "./clock";
+import type { AnimRef } from "./types";
 
-const clockCtx = dom.clock.getContext("2d");
+const clockCtx = dom.clock.getContext("2d")!;
 const fxCanvas = dom.confettiCanvas;
-const fxCtx = fxCanvas.getContext("2d");
-const S = 1.2; // sprite scale
+const fxCtx = fxCanvas.getContext("2d")!;
 
-let dogAnim = null;
-let sadDogAnim = null;
+const S = 1.2; // sprite scale factor
+
+const dogAnim: AnimRef = { id: null };
+const sadDogAnim: AnimRef = { id: null };
 
 // --- Shared animation loop ---
 
-function runAnimation(totalFrames, animRef, drawFrame, onComplete) {
-  cancelAnimationFrame(animRef.id);
+function runAnimation(
+  totalFrames: number,
+  ref: AnimRef,
+  drawFrame: (frame: number, progress: number) => void,
+  onComplete?: () => void,
+): void {
+  if (ref.id !== null) cancelAnimationFrame(ref.id);
   let frame = 0;
 
-  function step() {
+  function step(): void {
     frame++;
     drawFrame(frame, frame / totalFrames);
 
     if (frame < totalFrames) {
-      animRef.id = requestAnimationFrame(step);
+      ref.id = requestAnimationFrame(step);
     } else {
-      if (onComplete) onComplete();
+      ref.id = null;
+      onComplete?.();
     }
   }
 
@@ -35,7 +39,12 @@ function runAnimation(totalFrames, animRef, drawFrame, onComplete) {
 
 // --- Happy dog (side view, runs across screen) ---
 
-function drawHappyDog(c, cx, cy, facingRight) {
+function drawHappyDog(
+  c: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  facingRight: boolean,
+): void {
   c.save();
   c.translate(cx, cy);
   if (!facingRight) c.scale(-1, 1);
@@ -95,43 +104,44 @@ function drawHappyDog(c, cx, cy, facingRight) {
   c.restore();
 }
 
-function launchDogHorizontal(facingRight, onComplete) {
+function launchDogHorizontal(facingRight: boolean, onComplete?: () => void): void {
   const screenW = fxCanvas.width;
   const screenH = fxCanvas.height;
   const startX = facingRight ? -100 : screenW + 100;
   const endX = facingRight ? screenW + 100 : -100;
   const groundY = screenH * 0.55;
   const jumpHeight = screenH * 0.3;
-  const ref = { id: dogAnim };
 
   drawClockFace();
 
-  runAnimation(DOG_RUN_FRAMES, ref, (frame, t) => {
-    fxCtx.clearRect(0, 0, screenW, screenH);
-    const x = startX + (endX - startX) * t;
-    const bounceT = (t * 3) % 1;
-    const y = groundY - jumpHeight * 4 * bounceT * (1 - bounceT);
-    drawHappyDog(fxCtx, x, y, facingRight);
-  }, () => {
-    fxCtx.clearRect(0, 0, screenW, screenH);
-    dogAnim = ref.id;
-    if (onComplete) onComplete();
-  });
-
-  dogAnim = ref.id;
+  runAnimation(
+    ANIM.dogRunFrames,
+    dogAnim,
+    (_frame, t) => {
+      fxCtx.clearRect(0, 0, screenW, screenH);
+      const x = startX + (endX - startX) * t;
+      const bounceT = (t * 3) % 1;
+      const y = groundY - jumpHeight * 4 * bounceT * (1 - bounceT);
+      drawHappyDog(fxCtx, x, y, facingRight);
+    },
+    () => {
+      fxCtx.clearRect(0, 0, screenW, screenH);
+      onComplete?.();
+    },
+  );
 }
 
-export function launchDog(onComplete) {
+export function launchDog(onComplete?: () => void): void {
   launchDogHorizontal(true, onComplete);
 }
 
-export function launchDogReverse(onComplete) {
+export function launchDogReverse(onComplete?: () => void): void {
   launchDogHorizontal(false, onComplete);
 }
 
 // --- Front-facing dog (runs toward camera) ---
 
-function drawFrontDog(c, cx, cy, legPhase) {
+function drawFrontDog(c: CanvasRenderingContext2D, cx: number, cy: number, legPhase: number): void {
   c.save();
   c.translate(cx, cy);
 
@@ -142,7 +152,7 @@ function drawFrontDog(c, cx, cy, legPhase) {
   for (const side of [-1, 1]) {
     c.save();
     c.translate(side * 14 * S, 16 * S);
-    c.rotate(side * legSwing * 0.7 * Math.PI / 180 * 3);
+    c.rotate(((side * legSwing * 0.7 * Math.PI) / 180) * 3);
     c.fillRect(-3 * S, 0, 6 * S, 22 * S);
     c.beginPath();
     c.ellipse(0, 22 * S, 5 * S, 3 * S, 0, 0, Math.PI * 2);
@@ -161,7 +171,7 @@ function drawFrontDog(c, cx, cy, legPhase) {
   for (const side of [-1, 1]) {
     c.save();
     c.translate(side * 10 * S, 16 * S);
-    c.rotate(side * legSwing * Math.PI / 180 * 3);
+    c.rotate(((side * legSwing * Math.PI) / 180) * 3);
     c.fillRect(-3 * S, 0, 7 * S, 20 * S);
     c.beginPath();
     c.ellipse(0.5 * S, 20 * S, 5 * S, 3.5 * S, 0, 0, Math.PI * 2);
@@ -227,7 +237,7 @@ function drawFrontDog(c, cx, cy, legPhase) {
   c.restore();
 }
 
-export function launchDogApproach(onComplete) {
+export function launchDogApproach(onComplete?: () => void): void {
   const screenW = fxCanvas.width;
   const screenH = fxCanvas.height;
   const startScale = 0.3;
@@ -235,38 +245,39 @@ export function launchDogApproach(onComplete) {
   const startY = screenH * 0.45;
   const endY = -200;
   const cx = screenW / 2;
-  const ref = { id: dogAnim };
 
   drawClockFace();
 
-  runAnimation(DOG_APPROACH_FRAMES, ref, (frame, t) => {
-    fxCtx.clearRect(0, 0, screenW, screenH);
-    const ease = t * t;
-    const scale = startScale + (endScale - startScale) * ease;
-    const baseY = startY + (endY - startY) * ease;
-    const bounceT = (t * 10) % 1;
-    const bounceHeight = 12 * scale * 0.3;
-    const y = baseY - bounceHeight * 4 * bounceT * (1 - bounceT);
-    const legPhase = t * 45;
+  runAnimation(
+    ANIM.dogApproachFrames,
+    dogAnim,
+    (_frame, t) => {
+      fxCtx.clearRect(0, 0, screenW, screenH);
+      const ease = t * t;
+      const scale = startScale + (endScale - startScale) * ease;
+      const baseY = startY + (endY - startY) * ease;
+      const bounceT = (t * 10) % 1;
+      const bounceHeight = 12 * scale * 0.3;
+      const y = baseY - bounceHeight * 4 * bounceT * (1 - bounceT);
+      const legPhase = t * 45;
 
-    fxCtx.save();
-    fxCtx.translate(cx, y);
-    fxCtx.scale(scale, scale);
-    fxCtx.translate(-cx, -y);
-    drawFrontDog(fxCtx, cx, y, legPhase);
-    fxCtx.restore();
-  }, () => {
-    fxCtx.clearRect(0, 0, screenW, screenH);
-    dogAnim = ref.id;
-    if (onComplete) onComplete();
-  });
-
-  dogAnim = ref.id;
+      fxCtx.save();
+      fxCtx.translate(cx, y);
+      fxCtx.scale(scale, scale);
+      fxCtx.translate(-cx, -y);
+      drawFrontDog(fxCtx, cx, y, legPhase);
+      fxCtx.restore();
+    },
+    () => {
+      fxCtx.clearRect(0, 0, screenW, screenH);
+      onComplete?.();
+    },
+  );
 }
 
 // --- Sad dog (sits on clock face and bobs head) ---
 
-function drawSadDog(c, cx, cy, headBob) {
+function drawSadDog(c: CanvasRenderingContext2D, cx: number, cy: number, headBob: number): void {
   c.save();
   c.translate(cx, cy);
 
@@ -348,18 +359,18 @@ function drawSadDog(c, cx, cy, headBob) {
   c.restore();
 }
 
-export function launchSadDog(onComplete) {
-  const ref = { id: sadDogAnim };
-
-  runAnimation(SAD_DOG_FRAMES, ref, (frame) => {
-    drawClockFace();
-    const headBob = Math.sin(frame * 0.1) * 3;
-    drawSadDog(clockCtx, CLOCK_CENTER, CLOCK_CENTER + 20, headBob);
-  }, () => {
-    drawClockFace();
-    sadDogAnim = ref.id;
-    if (onComplete) onComplete();
-  });
-
-  sadDogAnim = ref.id;
+export function launchSadDog(onComplete?: () => void): void {
+  runAnimation(
+    ANIM.sadDogFrames,
+    sadDogAnim,
+    (frame) => {
+      drawClockFace();
+      const headBob = Math.sin(frame * 0.1) * 3;
+      drawSadDog(clockCtx, CLOCK.center, CLOCK.center + 20, headBob);
+    },
+    () => {
+      drawClockFace();
+      onComplete?.();
+    },
+  );
 }

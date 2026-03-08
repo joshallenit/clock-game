@@ -1,12 +1,11 @@
-import { dom } from "./config.js";
-import { submitName } from "./records.js";
-import { initGame } from "./game.js";
+import "./styles.css";
+import { dom } from "./config";
+import { submitName } from "./records";
+import { initGame } from "./game";
 
-// Name modal event bindings
 dom.nameSubmitBtn.addEventListener("click", submitName);
 dom.nameInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") submitName();
 });
 
-// Start the game
 initGame();

@@ -1,40 +1,34 @@
-import {
-  WINNING_SCORE, MAX_MISTAKES, RANDOM_MINUTES_AT,
-  CLOCK_RADIUS, COLORS, SPIN_FRAMES, HINT_PENALTY_MS,
-  HOUR_HAND_LENGTH_RATIO, MINUTE_HAND_LENGTH_RATIO,
-  HOUR_HAND_WIDTH, MINUTE_HAND_WIDTH,
-  WIN_CONFETTI_BURSTS, LOSE_RAIN_WAVES,
-  dom, state,
-} from "./config.js";
-import { formatTime } from "./utils.js";
-import { drawClockFace, drawHand, drawCenterDot } from "./clock.js";
-import { generateOptions } from "./options.js";
-import { launchConfetti, launchRain } from "./effects.js";
-import { launchDog, launchDogReverse, launchDogApproach, launchSadDog } from "./dog.js";
-import { playCorrectSound, playIncorrectSound, playWhineSound, playGameOverSound } from "./audio.js";
-import { isNewRecord, promptForName, updateRecordBanner } from "./records.js";
-import { updateElapsedDisplay, stopElapsedTimer, startRoundTimer, stopRoundTimer } from "./timer.js";
+import { RULES, CLOCK, COLORS, ANIM, dom, state } from "./config";
+import { formatTime } from "./utils";
+import { drawClockFace, drawHand, drawCenterDot } from "./clock";
+import { generateOptions } from "./options";
+import { launchConfetti, launchRain } from "./effects";
+import { launchDog, launchDogReverse, launchDogApproach, launchSadDog } from "./dog";
+import { playCorrectSound, playIncorrectSound, playWhineSound, playGameOverSound } from "./audio";
+import { isNewRecord, promptForName, updateRecordBanner } from "./records";
+import { updateElapsedDisplay, stopElapsedTimer, startRoundTimer, stopRoundTimer } from "./timer";
 
 // --- Mistakes display ---
 
-function updateMistakesDisplay() {
-  const remaining = MAX_MISTAKES - state.mistakes;
+function updateMistakesDisplay(): void {
+  const remaining = RULES.maxMistakes - state.mistakes;
   dom.mistakes.innerHTML = "\u2764\uFE0F".repeat(remaining) + "\uD83D\uDDA4".repeat(state.mistakes);
 }
 
-// --- Current round's correct answer (single source of truth) ---
+// --- Current round's correct answer ---
 
 let currentCorrectLabel = "";
+let spinAnim: number | null = null;
 
 // --- Options panel ---
 
-function disableOptions() {
-  for (const btn of dom.optionsPanel.querySelectorAll(".option-btn")) {
+function disableOptions(): void {
+  for (const btn of dom.optionsPanel.querySelectorAll<HTMLButtonElement>(".option-btn")) {
     btn.disabled = true;
   }
 }
 
-function renderOptions() {
+function renderOptions(): void {
   dom.optionsPanel.innerHTML = "";
   dom.optionsPanel.style.maxHeight = "";
   const options = generateOptions();
@@ -44,14 +38,14 @@ function renderOptions() {
   hintBtn.className = "option-btn hint-btn";
   hintBtn.textContent = "Hint...";
   hintBtn.addEventListener("click", () => {
-    state.elapsedMs += HINT_PENALTY_MS;
+    state.elapsedMs += RULES.hintPenaltyMs;
     const startHeight = dom.optionsPanel.scrollHeight;
     dom.optionsPanel.style.maxHeight = startHeight + "px";
     hintBtn.remove();
     options.forEach((opt, i) => {
       const btn = document.createElement("button");
       btn.className = "option-btn reveal";
-      btn.style.animationDelay = (i * 0.06) + "s";
+      btn.style.animationDelay = i * 0.06 + "s";
       btn.textContent = opt.label;
       btn.addEventListener("click", () => handleOptionClick(opt.label, btn));
       dom.optionsPanel.appendChild(btn);
@@ -69,48 +63,59 @@ function renderOptions() {
 
 // --- Pick a new random time for the round ---
 
-function pickRandomTime() {
+function pickRandomTime(): void {
   state.targetHours = Math.floor(Math.random() * 12) + 1;
-  state.targetMinutes = state.score >= RANDOM_MINUTES_AT
-    ? Math.floor(Math.random() * 60)
-    : Math.floor(Math.random() * 12) * 5;
+  state.targetMinutes =
+    state.score >= RULES.randomMinutesAt
+      ? Math.floor(Math.random() * 60)
+      : Math.floor(Math.random() * 12) * 5;
 }
 
 // --- Spinning hands transition ---
 
-let spinAnim = null;
-
-function spinHandsToTarget(onComplete) {
-  cancelAnimationFrame(spinAnim);
+function spinHandsToTarget(onComplete: () => void): void {
+  if (spinAnim !== null) cancelAnimationFrame(spinAnim);
   let frame = 0;
 
   const startMinAngle = Math.random() * Math.PI * 2;
   const startHourAngle = Math.random() * Math.PI * 2;
   const targetMinAngle = (state.targetMinutes * Math.PI) / 30 - Math.PI / 2;
-  const targetHourAngle = ((state.targetHours % 12 + state.targetMinutes / 60) * Math.PI) / 6 - Math.PI / 2;
+  const targetHourAngle =
+    (((state.targetHours % 12) + state.targetMinutes / 60) * Math.PI) / 6 - Math.PI / 2;
 
   let endMinAngle = targetMinAngle + Math.PI * 8;
   while (endMinAngle < startMinAngle) endMinAngle += Math.PI * 2;
   let endHourAngle = targetHourAngle + Math.PI * 4;
   while (endHourAngle < startHourAngle) endHourAngle += Math.PI * 2;
 
-  function animate() {
+  function animate(): void {
     frame++;
-    const t = frame / SPIN_FRAMES;
+    const t = frame / ANIM.spinFrames;
     const ease = 1 - Math.pow(1 - t, 5);
 
     const currentMin = startMinAngle + (endMinAngle - startMinAngle) * ease;
     const currentHour = startHourAngle + (endHourAngle - startHourAngle) * ease;
 
     drawClockFace();
-    drawHand(currentHour, CLOCK_RADIUS * HOUR_HAND_LENGTH_RATIO, HOUR_HAND_WIDTH, COLORS.text);
-    drawHand(currentMin, CLOCK_RADIUS * MINUTE_HAND_LENGTH_RATIO, MINUTE_HAND_WIDTH, COLORS.accent);
+    drawHand(
+      currentHour,
+      CLOCK.radius * CLOCK.hourHand.lengthRatio,
+      CLOCK.hourHand.width,
+      COLORS.text,
+    );
+    drawHand(
+      currentMin,
+      CLOCK.radius * CLOCK.minuteHand.lengthRatio,
+      CLOCK.minuteHand.width,
+      COLORS.accent,
+    );
     drawCenterDot();
 
-    if (frame < SPIN_FRAMES) {
+    if (frame < ANIM.spinFrames) {
       spinAnim = requestAnimationFrame(animate);
     } else {
-      if (onComplete) onComplete();
+      spinAnim = null;
+      onComplete();
     }
   }
 
@@ -119,7 +124,7 @@ function spinHandsToTarget(onComplete) {
 
 // --- Controls lock/unlock ---
 
-function unlockControls() {
+function unlockControls(): void {
   state.transitioning = false;
   dom.answer.disabled = false;
   dom.submitBtn.disabled = false;
@@ -128,7 +133,7 @@ function unlockControls() {
   startRoundTimer(handleTimeout);
 }
 
-function lockControls() {
+function lockControls(): void {
   state.transitioning = true;
   dom.answer.disabled = true;
   dom.submitBtn.disabled = true;
@@ -139,14 +144,14 @@ function lockControls() {
 
 const happyDogAnims = [launchDog, launchDogReverse, launchDogApproach];
 
-function transitionToNextRound() {
+function transitionToNextRound(): void {
   lockControls();
   pickRandomTime();
-  const dogAnim = happyDogAnims[Math.floor(Math.random() * happyDogAnims.length)];
-  dogAnim(() => spinHandsToTarget(unlockControls));
+  const anim = happyDogAnims[Math.floor(Math.random() * happyDogAnims.length)];
+  anim(() => spinHandsToTarget(unlockControls));
 }
 
-function sadDogTransition() {
+function sadDogTransition(): void {
   lockControls();
   launchSadDog(() => {
     pickRandomTime();
@@ -154,7 +159,7 @@ function sadDogTransition() {
   });
 }
 
-function spinToNextRound() {
+function spinToNextRound(): void {
   lockControls();
   pickRandomTime();
   spinHandsToTarget(unlockControls);
@@ -162,13 +167,13 @@ function spinToNextRound() {
 
 // --- Handle correct answer ---
 
-function handleCorrect(btn) {
+function handleCorrect(btn: HTMLButtonElement | null): void {
   if (btn) btn.classList.add("correct-pick");
   state.score++;
   stopRoundTimer();
-  dom.score.textContent = `Score: ${state.score}/${WINNING_SCORE}`;
+  dom.score.textContent = `Score: ${state.score}/${RULES.winningScore}`;
 
-  if (state.score >= WINNING_SCORE) {
+  if (state.score >= RULES.winningScore) {
     showWinScreen();
     return;
   }
@@ -184,7 +189,7 @@ function handleCorrect(btn) {
 
 // --- Handle mistake (shared by incorrect answer and timeout) ---
 
-function handleMistake(feedbackText, btn) {
+function handleMistake(feedbackText: string, btn: HTMLButtonElement | null): void {
   if (btn) {
     btn.classList.add("incorrect-pick");
     btn.disabled = true;
@@ -203,7 +208,7 @@ function handleMistake(feedbackText, btn) {
   dom.answer.value = "";
   disableOptions();
 
-  if (state.mistakes >= MAX_MISTAKES) {
+  if (state.mistakes >= RULES.maxMistakes) {
     showLoseScreen();
     return;
   }
@@ -211,17 +216,17 @@ function handleMistake(feedbackText, btn) {
   sadDogTransition();
 }
 
-function handleIncorrect(btn) {
+function handleIncorrect(btn: HTMLButtonElement | null): void {
   handleMistake("Incorrect! It was " + currentCorrectLabel, btn);
 }
 
-function handleTimeout() {
+function handleTimeout(): void {
   handleMistake("Time's up! It was " + currentCorrectLabel, null);
 }
 
 // --- Option click handler ---
 
-function handleOptionClick(label, btn) {
+function handleOptionClick(label: string, btn: HTMLButtonElement): void {
   if (state.transitioning) return;
   if (label === currentCorrectLabel) {
     handleCorrect(btn);
@@ -232,7 +237,7 @@ function handleOptionClick(label, btn) {
 
 // --- Text input answer ---
 
-function checkAnswer() {
+function checkAnswer(): void {
   if (state.transitioning) return;
 
   const raw = dom.answer.value.trim();
@@ -255,7 +260,7 @@ function checkAnswer() {
 
 // --- Win / Lose screens ---
 
-function showWinScreen() {
+function showWinScreen(): void {
   stopElapsedTimer();
   dom.gameArea.style.display = "none";
   dom.winScreen.style.display = "flex";
@@ -266,7 +271,7 @@ function showWinScreen() {
   const interval = setInterval(() => {
     bursts++;
     launchConfetti();
-    if (bursts >= WIN_CONFETTI_BURSTS) {
+    if (bursts >= ANIM.winConfettiBursts) {
       clearInterval(interval);
       if (isNewRecord(state.elapsedMs)) {
         promptForName(state.elapsedMs);
@@ -275,10 +280,10 @@ function showWinScreen() {
   }, 800);
 }
 
-function showLoseScreen() {
+function showLoseScreen(): void {
   stopElapsedTimer();
   dom.gameArea.style.display = "none";
-  dom.finalScoreValue.textContent = state.score;
+  dom.finalScoreValue.textContent = String(state.score);
   dom.loseScreen.style.display = "flex";
   playGameOverSound();
   launchRain();
@@ -287,19 +292,19 @@ function showLoseScreen() {
   const interval = setInterval(() => {
     waves++;
     launchRain();
-    if (waves >= LOSE_RAIN_WAVES) clearInterval(interval);
+    if (waves >= ANIM.loseRainWaves) clearInterval(interval);
   }, 1200);
 }
 
 // --- Reset ---
 
-function resetGame() {
+function resetGame(): void {
   state.score = 0;
   state.mistakes = 0;
   state.elapsedMs = 0;
   stopElapsedTimer();
   updateElapsedDisplay();
-  dom.score.textContent = `Score: 0/${WINNING_SCORE}`;
+  dom.score.textContent = `Score: 0/${RULES.winningScore}`;
   updateMistakesDisplay();
   dom.feedback.textContent = "";
   dom.feedback.className = "";
@@ -312,7 +317,7 @@ function resetGame() {
 
 // --- Public init ---
 
-export function initGame() {
+export function initGame(): void {
   updateRecordBanner();
   updateMistakesDisplay();
 

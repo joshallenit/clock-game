@@ -1,16 +1,16 @@
-import { getTimeLimitMs, dom, state } from "./config.js";
-import { formatElapsed } from "./utils.js";
+import { getTimeLimitMs, dom, state } from "./config";
+import { formatElapsed } from "./utils";
 
 // --- Elapsed timer (tracks total game time) ---
 
-export function updateElapsedDisplay() {
+export function updateElapsedDisplay(): void {
   dom.elapsed.textContent = formatElapsed(state.elapsedMs);
 }
 
 let elapsedStart = 0;
 
-export function startElapsedTimer() {
-  clearInterval(state.elapsedInterval);
+export function startElapsedTimer(): void {
+  if (state.elapsedInterval) clearInterval(state.elapsedInterval);
   elapsedStart = Date.now() - state.elapsedMs;
   state.elapsedInterval = setInterval(() => {
     state.elapsedMs = Date.now() - elapsedStart;
@@ -18,13 +18,13 @@ export function startElapsedTimer() {
   }, 100);
 }
 
-export function stopElapsedTimer() {
-  clearInterval(state.elapsedInterval);
+export function stopElapsedTimer(): void {
+  if (state.elapsedInterval) clearInterval(state.elapsedInterval);
 }
 
 // --- Round timer (per-question countdown) ---
 
-function updateTimerDisplay() {
+function updateTimerDisplay(): void {
   const totalSecs = Math.ceil(state.remainingMs / 1000);
   const mins = Math.floor(totalSecs / 60);
   const secs = totalSecs % 60;
@@ -43,8 +43,8 @@ function updateTimerDisplay() {
 let roundStart = 0;
 let roundDuration = 0;
 
-export function startRoundTimer(onTimeout) {
-  clearInterval(state.timerInterval);
+export function startRoundTimer(onTimeout: () => void): void {
+  if (state.timerInterval) clearInterval(state.timerInterval);
   roundDuration = getTimeLimitMs(state.score);
   state.remainingMs = roundDuration;
   roundStart = Date.now();
@@ -54,13 +54,13 @@ export function startRoundTimer(onTimeout) {
     const elapsed = Date.now() - roundStart;
     state.remainingMs = Math.max(0, roundDuration - elapsed);
     if (state.remainingMs <= 0) {
-      clearInterval(state.timerInterval);
+      if (state.timerInterval) clearInterval(state.timerInterval);
       onTimeout();
     }
     updateTimerDisplay();
   }, 100);
 }
 
-export function stopRoundTimer() {
-  clearInterval(state.timerInterval);
+export function stopRoundTimer(): void {
+  if (state.timerInterval) clearInterval(state.timerInterval);
 }

@@ -1,17 +1,13 @@
-import {
-  CONFETTI_COLORS, COLORS,
-  CONFETTI_PARTICLE_COUNT, RAIN_PARTICLE_COUNT, RAIN_SHAKE_FRAMES,
-  dom,
-} from "./config.js";
+import { CONFETTI_COLORS, COLORS, ANIM, dom } from "./config";
+import type { ConfettiParticle, RainParticle } from "./types";
 
 const canvas = dom.confettiCanvas;
-const ctx = canvas.getContext("2d");
+const ctx = canvas.getContext("2d")!;
 
-let confettiAnim = null;
-let rainAnim = null;
+let activeAnim: number | null = null;
 let rainShakeFrames = 0;
 
-function resizeCanvas() {
+function resizeCanvas(): void {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 }
@@ -20,30 +16,33 @@ resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 
 // --- Shared particle animation loop ---
-// beforeDraw is called once per frame (optional), updateParticle per particle.
-// Returns true from updateParticle if particle is still alive.
 
-function runParticleLoop({ particles, animId, cancelId, beforeDraw, updateParticle, onDone }) {
-  cancelAnimationFrame(animId.value);
-  cancelAnimationFrame(cancelId.value);
+function runParticleLoop<P>(config: {
+  particles: P[];
+  beforeDraw?: (particles: P[], width: number, height: number) => void;
+  updateParticle: (particle: P, width: number, height: number) => boolean;
+  onDone?: () => void;
+}): void {
+  if (activeAnim !== null) cancelAnimationFrame(activeAnim);
 
-  function step() {
+  function step(): void {
     const cw = canvas.width;
     const ch = canvas.height;
     ctx.clearRect(0, 0, cw, ch);
 
-    if (beforeDraw) beforeDraw(particles, cw, ch);
+    config.beforeDraw?.(config.particles, cw, ch);
 
     let alive = false;
-    for (const p of particles) {
-      if (updateParticle(p, cw, ch)) alive = true;
+    for (const p of config.particles) {
+      if (config.updateParticle(p, cw, ch)) alive = true;
     }
 
     if (alive) {
-      animId.value = requestAnimationFrame(step);
+      activeAnim = requestAnimationFrame(step);
     } else {
       ctx.clearRect(0, 0, cw, ch);
-      if (onDone) onDone();
+      activeAnim = null;
+      config.onDone?.();
     }
   }
 
@@ -52,12 +51,12 @@ function runParticleLoop({ particles, animId, cancelId, beforeDraw, updatePartic
 
 // --- Confetti burst from screen center ---
 
-export function launchConfetti() {
+export function launchConfetti(): void {
   const cx = canvas.width / 2;
   const cy = canvas.height / 2;
 
-  const particles = [];
-  for (let i = 0; i < CONFETTI_PARTICLE_COUNT; i++) {
+  const particles: ConfettiParticle[] = [];
+  for (let i = 0; i < ANIM.confettiCount; i++) {
     const angle = Math.random() * Math.PI * 2;
     const speed = Math.random() * 18 + 6;
     particles.push({
@@ -73,13 +72,8 @@ export function launchConfetti() {
     });
   }
 
-  const confettiId = { get value() { return confettiAnim; }, set value(v) { confettiAnim = v; } };
-  const rainId = { get value() { return rainAnim; }, set value(v) { rainAnim = v; } };
-
   runParticleLoop({
     particles,
-    animId: confettiId,
-    cancelId: rainId,
     updateParticle(p) {
       if (p.life <= 0) return false;
       p.x += p.vx;
@@ -104,14 +98,14 @@ export function launchConfetti() {
 
 // --- Sad rain with screen shake ---
 
-export function launchRain() {
+export function launchRain(): void {
   resizeCanvas();
 
   const cw = canvas.width;
   const ch = canvas.height;
 
-  const particles = [];
-  for (let i = 0; i < RAIN_PARTICLE_COUNT; i++) {
+  const particles: RainParticle[] = [];
+  for (let i = 0; i < ANIM.rainCount; i++) {
     particles.push({
       x: Math.random() * cw,
       y: Math.random() * -ch,
@@ -122,15 +116,10 @@ export function launchRain() {
     });
   }
 
-  rainShakeFrames = RAIN_SHAKE_FRAMES;
-
-  const rainId = { get value() { return rainAnim; }, set value(v) { rainAnim = v; } };
-  const confettiId = { get value() { return confettiAnim; }, set value(v) { confettiAnim = v; } };
+  rainShakeFrames = ANIM.rainShakeFrames;
 
   runParticleLoop({
     particles,
-    animId: rainId,
-    cancelId: confettiId,
     beforeDraw(parts, canvasW, canvasH) {
       // Screen shake
       if (rainShakeFrames > 0) {
@@ -150,8 +139,11 @@ export function launchRain() {
       ctx.fillStyle = `rgba(10, 10, 30, ${0.4 * Math.min(1, maxLife)})`;
       ctx.fillRect(0, 0, canvasW, canvasH);
     },
-    updateParticle(p, canvasW, canvasH) {
-      if (p.delay > 0) { p.delay--; return true; }
+    updateParticle(p, _canvasW, canvasH) {
+      if (p.delay > 0) {
+        p.delay--;
+        return true;
+      }
       if (p.life <= 0) return false;
       p.y += p.vy;
       if (p.y > canvasH) p.life -= 0.04;
