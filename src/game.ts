@@ -204,6 +204,8 @@ function resetGame(): void {
   state.score = 0;
   state.mistakes = 0;
   state.elapsedMs = 0;
+  state.correctLabel = "";
+  state.remainingMs = 0;
   stopElapsedTimer();
   updateElapsedDisplay();
   dom.score.textContent = `Score: 0/${RULES.winningScore}`;

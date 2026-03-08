@@ -44,6 +44,7 @@ function playTone(
   gain.connect(ctx.destination);
   osc.start(startTime);
   osc.stop(startTime + duration);
+  osc.onended = () => { osc.disconnect(); gain.disconnect(); };
 }
 
 // Ascending arpeggio: C5 → E5 → G5 → C6 → E6
@@ -96,6 +97,7 @@ export function playWhineSound(): void {
   gain.connect(ctx.destination);
   osc.start(now);
   osc.stop(now + 1.5);
+  osc.onended = () => { osc.disconnect(); gain.disconnect(); };
 
   // Second whimper
   const osc2 = ctx.createOscillator();
@@ -110,6 +112,7 @@ export function playWhineSound(): void {
   gain2.connect(ctx.destination);
   osc2.start(now);
   osc2.stop(now + 1.0);
+  osc2.onended = () => { osc2.disconnect(); gain2.disconnect(); };
 }
 
 // Descending doom: D4 → C4 → A3 → G3 → D3 (with detuned doubles)

@@ -1,7 +1,7 @@
 /*
- * Color palette note: Canvas rendering in config.ts defines COLORS separately
+ * Color palette note: Canvas rendering in colors.ts defines COLORS separately
  * because canvas cannot use CSS custom properties directly. If you change colors
- * here, update the dark/light palette objects in config.ts to match.
+ * here, update the dark/light palette objects in colors.ts to match.
  */
 
 :root {

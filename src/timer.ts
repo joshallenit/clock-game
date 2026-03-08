@@ -81,7 +81,11 @@ function rescheduleRoundTimeout(): void {
   state.roundTimeoutId = setTimeout(fireRoundTimeout, state.remainingMs);
 }
 
+let listenersAttached = false;
+
 export function setupTimerListeners(): void {
+  if (listenersAttached) return;
+  listenersAttached = true;
   document.addEventListener("visibilitychange", handleVisibilityChange);
 }
 
