@@ -84,16 +84,37 @@ function disableOptions() {
 
 function renderOptions() {
   dom.optionsPanel.innerHTML = "";
+  dom.optionsPanel.style.maxHeight = "";
   const options = generateOptions();
   const correctLabel = formatTime(state.targetHours, state.targetMinutes);
 
-  for (const opt of options) {
-    const btn = document.createElement("button");
-    btn.className = "option-btn";
-    btn.textContent = opt.label;
-    btn.addEventListener("click", () => handleOptionClick(opt.label, correctLabel, btn));
-    dom.optionsPanel.appendChild(btn);
-  }
+  const hintBtn = document.createElement("button");
+  hintBtn.className = "option-btn hint-btn";
+  hintBtn.textContent = "Hint...";
+  hintBtn.addEventListener("click", () => {
+    state.elapsedMs += 30000;
+    // Lock current height before changing content
+    const startHeight = dom.optionsPanel.scrollHeight;
+    dom.optionsPanel.style.maxHeight = startHeight + "px";
+    hintBtn.remove();
+    options.forEach((opt, i) => {
+      const btn = document.createElement("button");
+      btn.className = "option-btn reveal";
+      btn.style.animationDelay = (i * 0.06) + "s";
+      btn.textContent = opt.label;
+      btn.addEventListener("click", () => handleOptionClick(opt.label, correctLabel, btn));
+      dom.optionsPanel.appendChild(btn);
+    });
+    // Animate to new height on next frame
+    requestAnimationFrame(() => {
+      dom.optionsPanel.style.maxHeight = dom.optionsPanel.scrollHeight + "px";
+    });
+  });
+
+  dom.optionsPanel.appendChild(hintBtn);
+  requestAnimationFrame(() => {
+    dom.optionsPanel.style.maxHeight = dom.optionsPanel.scrollHeight + "px";
+  });
 }
 
 // --- Pick a new random time for the round ---
