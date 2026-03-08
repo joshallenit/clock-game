@@ -2,7 +2,7 @@
 import "./styles.css";
 import { initDom, dom } from "./dom";
 import { initColors } from "./colors";
-import { initRecords, submitName } from "./records";
+import { initRecords, submitName as submitNameAsync } from "./records";
 import { initClock } from "./clock";
 import { initEffects } from "./effects";
 import { initDog } from "./dog";
@@ -26,6 +26,12 @@ initRecords();   // 3. Clean up old localStorage records
 initClock();     // 4. Set up clock canvas context
 initEffects();   // 5. Set up effects overlay canvas
 initDog();       // 6. Set up dog sprite canvas contexts
+
+function submitName(): void {
+  submitNameAsync().catch((err) =>
+    console.error("Failed to submit name:", err),
+  );
+}
 
 // --- Modal focus management ---
 

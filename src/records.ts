@@ -1,99 +1,70 @@
-// Daily speed records via localStorage. Tracks best completion time per day.
+// Shared leaderboard via server API. Shows today's top 3 fastest times.
 import { dom } from "./dom";
 import { state } from "./state";
 import { formatElapsed } from "./utils";
-import type { DailyRecord } from "./types";
+import type { LeaderboardEntry } from "./types";
 
-const STORAGE_PREFIX = "clockRecord_";
-
-function getTodayKey(): string {
-  const d = new Date();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${STORAGE_PREFIX}${d.getFullYear()}-${month}-${day}`;
+async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
+  const res = await fetch("/api/scores");
+  if (!res.ok) return [];
+  const data = (await res.json()) as { scores: LeaderboardEntry[] };
+  return data.scores;
 }
 
-function isValidRecord(data: unknown): data is DailyRecord {
-  return (
-    typeof data === "object" &&
-    data !== null &&
-    typeof (data as DailyRecord).time === "number" &&
-    typeof (data as DailyRecord).name === "string"
-  );
+async function submitScore(
+  name: string,
+  time: number,
+): Promise<{ rank: number | null; scores: LeaderboardEntry[] }> {
+  const res = await fetch("/api/scores", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, time }),
+  });
+  if (!res.ok) return { rank: null, scores: [] };
+  return (await res.json()) as { rank: number | null; scores: LeaderboardEntry[] };
 }
 
-function loadRecord(): DailyRecord | null {
-  const key = getTodayKey();
-  try {
-    const data = localStorage.getItem(key);
-    if (!data) return null;
-    const parsed: unknown = JSON.parse(data);
-    if (!isValidRecord(parsed)) {
-      localStorage.removeItem(key);
-      return null;
-    }
-    return parsed;
-  } catch {
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      // Storage unavailable
-    }
-    return null;
-  }
-}
-
-function saveRecord(ms: number, name: string): void {
-  try {
-    localStorage.setItem(getTodayKey(), JSON.stringify({ time: ms, name }));
-  } catch {
-    // Storage full or unavailable (e.g. private browsing) -- silently ignore
-  }
-}
-
-export function isNewRecord(finishMs: number): boolean {
-  const record = loadRecord();
-  return !record || finishMs < record.time;
-}
-
-export function updateRecordBanner(): void {
-  const record = loadRecord();
+function renderBanner(scores: LeaderboardEntry[]): void {
   dom.recordBanner.textContent = "";
-  if (record) {
+
+  if (scores.length === 0) {
+    dom.recordBanner.textContent = "No records yet!";
+    return;
+  }
+
+  const title = document.createElement("div");
+  title.className = "leaderboard-title";
+  title.textContent = "Today's Fastest";
+  dom.recordBanner.appendChild(title);
+
+  const list = document.createElement("ol");
+  list.className = "leaderboard-list";
+  for (const entry of scores) {
+    const li = document.createElement("li");
     const nameSpan = document.createElement("span");
-    nameSpan.className = "record-name";
-    nameSpan.textContent = record.name;
-    dom.recordBanner.appendChild(nameSpan);
-    dom.recordBanner.appendChild(document.createElement("br"));
-    dom.recordBanner.appendChild(
-      document.createTextNode(`Today's Record: ${formatElapsed(record.time)}`),
-    );
-  } else {
-    dom.recordBanner.textContent = "No record today yet!";
+    nameSpan.className = "lb-name";
+    nameSpan.textContent = entry.name;
+    const timeSpan = document.createElement("span");
+    timeSpan.className = "lb-time";
+    timeSpan.textContent = formatElapsed(entry.time);
+    li.appendChild(nameSpan);
+    li.appendChild(timeSpan);
+    list.appendChild(li);
   }
+  dom.recordBanner.appendChild(list);
 }
 
-function cleanupOldRecords(): void {
-  const todayKey = getTodayKey();
+export async function updateRecordBanner(): Promise<void> {
   try {
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key?.startsWith(STORAGE_PREFIX) && key !== todayKey) {
-        keysToRemove.push(key);
-      }
-    }
-    for (const key of keysToRemove) {
-      localStorage.removeItem(key);
-    }
+    const scores = await fetchLeaderboard();
+    renderBanner(scores);
   } catch {
-    // Storage unavailable
+    dom.recordBanner.textContent = "No records yet!";
   }
 }
 
-/** Clean up old records. Call once at startup. */
 export function initRecords(): void {
-  cleanupOldRecords();
+  updateRecordBanner();
 }
 
 export function promptForName(finishMs: number): void {
@@ -103,9 +74,17 @@ export function promptForName(finishMs: number): void {
   dom.nameInput.focus();
 }
 
-export function submitName(): void {
+export async function submitName(): Promise<void> {
   const name = dom.nameInput.value.trim() || "Anonymous";
-  saveRecord(state.elapsedMs, name);
   dom.nameModal.hidden = true;
-  updateRecordBanner();
+  try {
+    const { rank, scores } = await submitScore(name, state.elapsedMs);
+    renderBanner(scores);
+    if (rank !== null && rank <= 3) {
+      const title = dom.nameModal.querySelector("h2");
+      if (title) title.textContent = "New Record!";
+    }
+  } catch {
+    await updateRecordBanner();
+  }
 }

@@ -78,10 +78,10 @@ export interface RainParticle {
   life: number;
 }
 
-/** A daily speed record stored in localStorage. */
-export interface DailyRecord {
-  time: number;
+/** A leaderboard entry returned from the server. */
+export interface LeaderboardEntry {
   name: string;
+  time: number;
 }
 
 /** Holds a cancellable requestAnimationFrame ID. */

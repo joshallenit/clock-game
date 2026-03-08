@@ -539,9 +539,34 @@ canvas {
   margin-top: 4px;
 }
 
-#record-banner .record-name {
+#record-banner .leaderboard-title {
   font-weight: bold;
-  font-size: 15px;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+#record-banner .leaderboard-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#record-banner .leaderboard-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+#record-banner .leaderboard-list .lb-name {
+  font-weight: bold;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#record-banner .leaderboard-list .lb-time {
+  font-variant-numeric: tabular-nums;
 }
 
 /* --- Name Modal --- */

@@ -1,53 +1,82 @@
-import { describe, it, expect, beforeEach, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
 import { setupTestDOM } from "./test-dom";
+import { dom } from "../dom";
+import { state } from "../state";
+import { updateRecordBanner, submitName } from "../records";
 
 beforeAll(() => {
+  // Mock fetch before setupTestDOM since initRecords fires a fetch
+  vi.spyOn(globalThis, "fetch").mockResolvedValue({
+    ok: true,
+    json: () => Promise.resolve({ scores: [] }),
+  } as Response);
   setupTestDOM();
 });
 
-function getTodayKey(): string {
-  const d = new Date();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `clockRecord_${d.getFullYear()}-${month}-${day}`;
-}
-
 describe("records", () => {
   beforeEach(() => {
-    localStorage.clear();
+    vi.mocked(globalThis.fetch).mockReset();
   });
 
-  it("isNewRecord returns true when no record exists", async () => {
-    const { isNewRecord } = await import("../records");
-    expect(isNewRecord(50000)).toBe(true);
+  it("updateRecordBanner renders scores from API", async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          scores: [
+            { name: "Alice", time: 30000 },
+            { name: "Bob", time: 45000 },
+          ],
+        }),
+    } as Response);
+
+    await updateRecordBanner();
+
+    expect(dom.recordBanner.textContent).toContain("Alice");
+    expect(dom.recordBanner.textContent).toContain("Bob");
+    expect(dom.recordBanner.textContent).toContain("Today's Fastest");
   });
 
-  it("isNewRecord returns true when beating existing record", async () => {
-    localStorage.setItem(getTodayKey(), JSON.stringify({ time: 60000, name: "Test" }));
-    const { isNewRecord } = await import("../records");
-    expect(isNewRecord(50000)).toBe(true);
+  it("updateRecordBanner shows fallback when API fails", async () => {
+    vi.mocked(globalThis.fetch).mockRejectedValue(
+      new Error("Network error"),
+    );
+
+    await updateRecordBanner();
+
+    expect(dom.recordBanner.textContent).toBe("No records yet!");
   });
 
-  it("isNewRecord returns false when slower than existing record", async () => {
-    localStorage.setItem(getTodayKey(), JSON.stringify({ time: 40000, name: "Test" }));
-    const { isNewRecord } = await import("../records");
-    expect(isNewRecord(50000)).toBe(false);
+  it("updateRecordBanner shows fallback when scores are empty", async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ scores: [] }),
+    } as Response);
+
+    await updateRecordBanner();
+
+    expect(dom.recordBanner.textContent).toBe("No records yet!");
   });
 
-  it("handles corrupt localStorage data gracefully", async () => {
-    localStorage.setItem(getTodayKey(), "not valid json{{{");
-    const { isNewRecord } = await import("../records");
-    expect(isNewRecord(50000)).toBe(true);
-    // corrupt key should be removed
-    expect(localStorage.getItem(getTodayKey())).toBeNull();
-  });
+  it("submitName posts score and updates banner", async () => {
+    const mockResponse = {
+      rank: 1,
+      scores: [{ name: "TestPlayer", time: 25000 }],
+    };
+    vi.mocked(globalThis.fetch).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockResponse),
+    } as Response);
 
-  it("handles wrong-shape localStorage data gracefully", async () => {
-    // Valid JSON but not a DailyRecord shape
-    localStorage.setItem(getTodayKey(), JSON.stringify({ wrong: "shape" }));
-    const { isNewRecord } = await import("../records");
-    expect(isNewRecord(50000)).toBe(true);
-    // invalid record should be removed
-    expect(localStorage.getItem(getTodayKey())).toBeNull();
+    dom.nameInput.value = "TestPlayer";
+    state.elapsedMs = 25000;
+
+    await submitName();
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      "/api/scores",
+      expect.objectContaining({ method: "POST" }),
+    );
+    expect(dom.recordBanner.textContent).toContain("TestPlayer");
   });
 });

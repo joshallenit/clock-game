@@ -4,7 +4,7 @@ import { dom } from "./dom";
 import { state } from "./state";
 import { launchConfetti, launchRain } from "./effects";
 import { playCorrectSound, playGameOverSound } from "./audio";
-import { isNewRecord, promptForName } from "./records";
+import { promptForName } from "./records";
 import { stopElapsedTimer } from "./timer";
 
 export function stopScreenEffects(): void {
@@ -29,9 +29,7 @@ export function showWinScreen(): void {
     launchConfetti();
     if (bursts >= ANIM.winConfettiBursts) {
       stopScreenEffects();
-      if (isNewRecord(state.elapsedMs)) {
-        promptForName(state.elapsedMs);
-      }
+      promptForName(state.elapsedMs);
     }
   }, ANIM.winBurstIntervalMs);
 }
