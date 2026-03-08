@@ -1,6 +1,8 @@
 import {
   WINNING_SCORE, MAX_MISTAKES, RANDOM_MINUTES_AT,
   CLOCK_RADIUS, COLORS, SPIN_FRAMES, HINT_PENALTY_MS,
+  HOUR_HAND_LENGTH_RATIO, MINUTE_HAND_LENGTH_RATIO,
+  HOUR_HAND_WIDTH, MINUTE_HAND_WIDTH,
   WIN_CONFETTI_BURSTS, LOSE_RAIN_WAVES,
   dom, state,
 } from "./config.js";
@@ -11,7 +13,7 @@ import { launchConfetti, launchRain } from "./effects.js";
 import { launchDog, launchDogReverse, launchDogApproach, launchSadDog } from "./dog.js";
 import { playCorrectSound, playIncorrectSound, playWhineSound, playGameOverSound } from "./audio.js";
 import { isNewRecord, promptForName, updateRecordBanner } from "./records.js";
-import { updateElapsedDisplay, startElapsedTimer, stopElapsedTimer, startRoundTimer, stopRoundTimer } from "./timer.js";
+import { updateElapsedDisplay, stopElapsedTimer, startRoundTimer, stopRoundTimer } from "./timer.js";
 
 // --- Mistakes display ---
 
@@ -19,6 +21,10 @@ function updateMistakesDisplay() {
   const remaining = MAX_MISTAKES - state.mistakes;
   dom.mistakes.innerHTML = "\u2764\uFE0F".repeat(remaining) + "\uD83D\uDDA4".repeat(state.mistakes);
 }
+
+// --- Current round's correct answer (single source of truth) ---
+
+let currentCorrectLabel = "";
 
 // --- Options panel ---
 
@@ -32,7 +38,7 @@ function renderOptions() {
   dom.optionsPanel.innerHTML = "";
   dom.optionsPanel.style.maxHeight = "";
   const options = generateOptions();
-  const correctLabel = formatTime(state.targetHours, state.targetMinutes);
+  currentCorrectLabel = formatTime(state.targetHours, state.targetMinutes);
 
   const hintBtn = document.createElement("button");
   hintBtn.className = "option-btn hint-btn";
@@ -47,7 +53,7 @@ function renderOptions() {
       btn.className = "option-btn reveal";
       btn.style.animationDelay = (i * 0.06) + "s";
       btn.textContent = opt.label;
-      btn.addEventListener("click", () => handleOptionClick(opt.label, correctLabel, btn));
+      btn.addEventListener("click", () => handleOptionClick(opt.label, btn));
       dom.optionsPanel.appendChild(btn);
     });
     requestAnimationFrame(() => {
@@ -97,8 +103,8 @@ function spinHandsToTarget(onComplete) {
     const currentHour = startHourAngle + (endHourAngle - startHourAngle) * ease;
 
     drawClockFace();
-    drawHand(currentHour, CLOCK_RADIUS * 0.5, 6, COLORS.text);
-    drawHand(currentMin, CLOCK_RADIUS * 0.7, 4, COLORS.accent);
+    drawHand(currentHour, CLOCK_RADIUS * HOUR_HAND_LENGTH_RATIO, HOUR_HAND_WIDTH, COLORS.text);
+    drawHand(currentMin, CLOCK_RADIUS * MINUTE_HAND_LENGTH_RATIO, MINUTE_HAND_WIDTH, COLORS.accent);
     drawCenterDot();
 
     if (frame < SPIN_FRAMES) {
@@ -206,20 +212,18 @@ function handleMistake(feedbackText, btn) {
 }
 
 function handleIncorrect(btn) {
-  const correctAnswer = formatTime(state.targetHours, state.targetMinutes);
-  handleMistake("Incorrect! It was " + correctAnswer, btn);
+  handleMistake("Incorrect! It was " + currentCorrectLabel, btn);
 }
 
 function handleTimeout() {
-  const correctAnswer = formatTime(state.targetHours, state.targetMinutes);
-  handleMistake("Time's up! It was " + correctAnswer, null);
+  handleMistake("Time's up! It was " + currentCorrectLabel, null);
 }
 
 // --- Option click handler ---
 
-function handleOptionClick(label, correctLabel, btn) {
+function handleOptionClick(label, btn) {
   if (state.transitioning) return;
-  if (label === correctLabel) {
+  if (label === currentCorrectLabel) {
     handleCorrect(btn);
   } else {
     handleIncorrect(btn);

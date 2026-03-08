@@ -32,6 +32,17 @@ export const RAIN_SHAKE_FRAMES = 20;
 export const WIN_CONFETTI_BURSTS = 5;
 export const LOSE_RAIN_WAVES = 3;
 
+// Clock drawing dimensions
+export const TICK_OUTER_INSET = 8;
+export const HOUR_TICK_INNER_INSET = 25;
+export const MINUTE_TICK_INNER_INSET = 12;
+export const NUMBER_INSET = 45;
+export const HOUR_HAND_LENGTH_RATIO = 0.5;
+export const MINUTE_HAND_LENGTH_RATIO = 0.7;
+export const HOUR_HAND_WIDTH = 6;
+export const MINUTE_HAND_WIDTH = 4;
+export const CENTER_DOT_RADIUS = 6;
+
 // Colors
 export const COLORS = {
   background: "#1a1a2e",
@@ -45,6 +56,7 @@ export const COLORS = {
   dog: "#c4813d",
   dogDark: "#9a6530",
   dogChest: "#d4975a",
+  dogTongue: "#e63946",
   rain: "#6899cc",
 };
 

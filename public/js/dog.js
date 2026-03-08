@@ -71,7 +71,7 @@ function drawHappyDog(c, cx, cy, facingRight) {
   c.fill();
 
   // Tongue
-  c.fillStyle = COLORS.incorrect;
+  c.fillStyle = COLORS.dogTongue;
   c.beginPath();
   c.ellipse(38 * S, -3 * S, 3 * S, 6 * S, 0.2, 0, Math.PI * 2);
   c.fill();
@@ -219,7 +219,7 @@ function drawFrontDog(c, cx, cy, legPhase) {
   c.fill();
 
   // Tongue
-  c.fillStyle = COLORS.incorrect;
+  c.fillStyle = COLORS.dogTongue;
   c.beginPath();
   c.ellipse(3 * S, -8 * S, 4 * S, 7 * S, 0.15, 0, Math.PI * 2);
   c.fill();
@@ -266,86 +266,86 @@ export function launchDogApproach(onComplete) {
 
 // --- Sad dog (sits on clock face and bobs head) ---
 
-function drawSadDog(cx, cy, headBob) {
-  clockCtx.save();
-  clockCtx.translate(cx, cy);
+function drawSadDog(c, cx, cy, headBob) {
+  c.save();
+  c.translate(cx, cy);
 
   // Body
-  clockCtx.fillStyle = COLORS.dog;
-  clockCtx.beginPath();
-  clockCtx.ellipse(0, 4 * S, 24 * S, 20 * S, 0, 0, Math.PI * 2);
-  clockCtx.fill();
+  c.fillStyle = COLORS.dog;
+  c.beginPath();
+  c.ellipse(0, 4 * S, 24 * S, 20 * S, 0, 0, Math.PI * 2);
+  c.fill();
 
   // Head
-  clockCtx.beginPath();
-  clockCtx.ellipse(0, -22 * S + headBob, 16 * S, 14 * S, 0, 0, Math.PI * 2);
-  clockCtx.fill();
+  c.beginPath();
+  c.ellipse(0, -22 * S + headBob, 16 * S, 14 * S, 0, 0, Math.PI * 2);
+  c.fill();
 
   // Ears
-  clockCtx.fillStyle = COLORS.dogDark;
+  c.fillStyle = COLORS.dogDark;
   for (const side of [-1, 1]) {
-    clockCtx.beginPath();
-    clockCtx.ellipse(side * 14 * S, -18 * S + headBob, 7 * S, 14 * S, side * 0.4, 0, Math.PI * 2);
-    clockCtx.fill();
+    c.beginPath();
+    c.ellipse(side * 14 * S, -18 * S + headBob, 7 * S, 14 * S, side * 0.4, 0, Math.PI * 2);
+    c.fill();
   }
 
   // Half-closed eyes
-  clockCtx.fillStyle = "#222";
+  c.fillStyle = "#222";
   for (const side of [-1, 1]) {
-    clockCtx.beginPath();
-    clockCtx.ellipse(side * 6 * S, -24 * S + headBob, 3 * S, 1.5 * S, 0, 0, Math.PI * 2);
-    clockCtx.fill();
+    c.beginPath();
+    c.ellipse(side * 6 * S, -24 * S + headBob, 3 * S, 1.5 * S, 0, 0, Math.PI * 2);
+    c.fill();
   }
 
   // Sad eyebrows
-  clockCtx.strokeStyle = COLORS.dogDark;
-  clockCtx.lineWidth = 2 * S;
+  c.strokeStyle = COLORS.dogDark;
+  c.lineWidth = 2 * S;
   for (const side of [-1, 1]) {
-    clockCtx.beginPath();
-    clockCtx.moveTo(side * 10 * S, -28 * S + headBob);
-    clockCtx.lineTo(side * 3 * S, -26 * S + headBob);
-    clockCtx.stroke();
+    c.beginPath();
+    c.moveTo(side * 10 * S, -28 * S + headBob);
+    c.lineTo(side * 3 * S, -26 * S + headBob);
+    c.stroke();
   }
 
   // Nose
-  clockCtx.fillStyle = "#333";
-  clockCtx.beginPath();
-  clockCtx.arc(0, -17 * S + headBob, 3 * S, 0, Math.PI * 2);
-  clockCtx.fill();
+  c.fillStyle = "#333";
+  c.beginPath();
+  c.arc(0, -17 * S + headBob, 3 * S, 0, Math.PI * 2);
+  c.fill();
 
   // Sad mouth
-  clockCtx.strokeStyle = "#333";
-  clockCtx.lineWidth = 2 * S;
-  clockCtx.beginPath();
-  clockCtx.arc(0, -11 * S + headBob, 5 * S, Math.PI + 0.3, Math.PI * 2 - 0.3);
-  clockCtx.stroke();
+  c.strokeStyle = "#333";
+  c.lineWidth = 2 * S;
+  c.beginPath();
+  c.arc(0, -11 * S + headBob, 5 * S, Math.PI + 0.3, Math.PI * 2 - 0.3);
+  c.stroke();
 
   // Front paws
-  clockCtx.fillStyle = COLORS.dog;
+  c.fillStyle = COLORS.dog;
   for (const side of [-1, 1]) {
-    clockCtx.beginPath();
-    clockCtx.ellipse(side * 10 * S, 22 * S, 6 * S, 4 * S, 0, 0, Math.PI * 2);
-    clockCtx.fill();
+    c.beginPath();
+    c.ellipse(side * 10 * S, 22 * S, 6 * S, 4 * S, 0, 0, Math.PI * 2);
+    c.fill();
   }
 
   // Drooping tail
-  clockCtx.strokeStyle = COLORS.dog;
-  clockCtx.lineWidth = 5 * S;
-  clockCtx.lineCap = "round";
-  clockCtx.beginPath();
-  clockCtx.moveTo(-20 * S, 10 * S);
-  clockCtx.quadraticCurveTo(-34 * S, 18 * S, -30 * S, 26 * S);
-  clockCtx.stroke();
+  c.strokeStyle = COLORS.dog;
+  c.lineWidth = 5 * S;
+  c.lineCap = "round";
+  c.beginPath();
+  c.moveTo(-20 * S, 10 * S);
+  c.quadraticCurveTo(-34 * S, 18 * S, -30 * S, 26 * S);
+  c.stroke();
 
   // Tear drop
-  clockCtx.fillStyle = COLORS.rain;
-  clockCtx.globalAlpha = 0.7;
-  clockCtx.beginPath();
-  clockCtx.ellipse(10 * S, -18 * S + headBob, 2 * S, 3 * S, 0, 0, Math.PI * 2);
-  clockCtx.fill();
-  clockCtx.globalAlpha = 1;
+  c.fillStyle = COLORS.rain;
+  c.globalAlpha = 0.7;
+  c.beginPath();
+  c.ellipse(10 * S, -18 * S + headBob, 2 * S, 3 * S, 0, 0, Math.PI * 2);
+  c.fill();
+  c.globalAlpha = 1;
 
-  clockCtx.restore();
+  c.restore();
 }
 
 export function launchSadDog(onComplete) {
@@ -354,7 +354,7 @@ export function launchSadDog(onComplete) {
   runAnimation(SAD_DOG_FRAMES, ref, (frame) => {
     drawClockFace();
     const headBob = Math.sin(frame * 0.1) * 3;
-    drawSadDog(CLOCK_CENTER, CLOCK_CENTER + 20, headBob);
+    drawSadDog(clockCtx, CLOCK_CENTER, CLOCK_CENTER + 20, headBob);
   }, () => {
     drawClockFace();
     sadDogAnim = ref.id;

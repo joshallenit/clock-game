@@ -1,5 +1,8 @@
 import {
   CLOCK_SIZE, CLOCK_CENTER, CLOCK_RADIUS,
+  TICK_OUTER_INSET, HOUR_TICK_INNER_INSET, MINUTE_TICK_INNER_INSET,
+  NUMBER_INSET, HOUR_HAND_LENGTH_RATIO, MINUTE_HAND_LENGTH_RATIO,
+  HOUR_HAND_WIDTH, MINUTE_HAND_WIDTH, CENTER_DOT_RADIUS,
   HIDE_NON_QUARTER_NUMBERS_AT, HIDE_ALL_NUMBERS_AT,
   COLORS, dom, state,
 } from "./config.js";
@@ -34,27 +37,26 @@ export function drawClockFace() {
   ctx.stroke();
 
   // Hour tick marks
+  const hourInner = CLOCK_RADIUS - HOUR_TICK_INNER_INSET;
+  const tickOuter = CLOCK_RADIUS - TICK_OUTER_INSET;
   for (let i = 0; i < 12; i++) {
     const angle = (i * Math.PI) / 6 - Math.PI / 2;
-    const inner = CLOCK_RADIUS - 25;
-    const outer = CLOCK_RADIUS - 8;
     ctx.beginPath();
-    ctx.moveTo(CLOCK_CENTER + inner * Math.cos(angle), CLOCK_CENTER + inner * Math.sin(angle));
-    ctx.lineTo(CLOCK_CENTER + outer * Math.cos(angle), CLOCK_CENTER + outer * Math.sin(angle));
+    ctx.moveTo(CLOCK_CENTER + hourInner * Math.cos(angle), CLOCK_CENTER + hourInner * Math.sin(angle));
+    ctx.lineTo(CLOCK_CENTER + tickOuter * Math.cos(angle), CLOCK_CENTER + tickOuter * Math.sin(angle));
     ctx.strokeStyle = COLORS.text;
     ctx.lineWidth = 3;
     ctx.stroke();
   }
 
   // Minute tick marks
+  const minuteInner = CLOCK_RADIUS - MINUTE_TICK_INNER_INSET;
   for (let i = 0; i < 60; i++) {
     if (i % 5 === 0) continue;
     const angle = (i * Math.PI) / 30 - Math.PI / 2;
-    const inner = CLOCK_RADIUS - 12;
-    const outer = CLOCK_RADIUS - 8;
     ctx.beginPath();
-    ctx.moveTo(CLOCK_CENTER + inner * Math.cos(angle), CLOCK_CENTER + inner * Math.sin(angle));
-    ctx.lineTo(CLOCK_CENTER + outer * Math.cos(angle), CLOCK_CENTER + outer * Math.sin(angle));
+    ctx.moveTo(CLOCK_CENTER + minuteInner * Math.cos(angle), CLOCK_CENTER + minuteInner * Math.sin(angle));
+    ctx.lineTo(CLOCK_CENTER + tickOuter * Math.cos(angle), CLOCK_CENTER + tickOuter * Math.sin(angle));
     ctx.strokeStyle = COLORS.muted;
     ctx.lineWidth = 1;
     ctx.stroke();
@@ -65,11 +67,11 @@ export function drawClockFace() {
   ctx.font = "bold 24px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
+  const numRadius = CLOCK_RADIUS - NUMBER_INSET;
   for (let i = 1; i <= 12; i++) {
     if (state.score >= HIDE_ALL_NUMBERS_AT) break;
     if (state.score >= HIDE_NON_QUARTER_NUMBERS_AT && i % 3 !== 0) continue;
     const angle = (i * Math.PI) / 6 - Math.PI / 2;
-    const numRadius = CLOCK_RADIUS - 45;
     ctx.fillText(i, CLOCK_CENTER + numRadius * Math.cos(angle), CLOCK_CENTER + numRadius * Math.sin(angle));
   }
 }
@@ -77,7 +79,7 @@ export function drawClockFace() {
 // Draw center dot
 export function drawCenterDot() {
   ctx.beginPath();
-  ctx.arc(CLOCK_CENTER, CLOCK_CENTER, 6, 0, Math.PI * 2);
+  ctx.arc(CLOCK_CENTER, CLOCK_CENTER, CENTER_DOT_RADIUS, 0, Math.PI * 2);
   ctx.fillStyle = COLORS.accent;
   ctx.fill();
 }
@@ -86,8 +88,8 @@ export function drawCenterDot() {
 export function drawClockAt(h, m) {
   drawClockFace();
   const hourAngle = ((h % 12 + m / 60) * Math.PI) / 6 - Math.PI / 2;
-  drawHand(hourAngle, CLOCK_RADIUS * 0.5, 6, COLORS.text);
+  drawHand(hourAngle, CLOCK_RADIUS * HOUR_HAND_LENGTH_RATIO, HOUR_HAND_WIDTH, COLORS.text);
   const minuteAngle = (m * Math.PI) / 30 - Math.PI / 2;
-  drawHand(minuteAngle, CLOCK_RADIUS * 0.7, 4, COLORS.accent);
+  drawHand(minuteAngle, CLOCK_RADIUS * MINUTE_HAND_LENGTH_RATIO, MINUTE_HAND_WIDTH, COLORS.accent);
   drawCenterDot();
 }
