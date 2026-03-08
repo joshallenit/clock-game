@@ -25,7 +25,7 @@ export function showWinScreen(): void {
         promptForName(state.elapsedMs);
       }
     }
-  }, 800);
+  }, ANIM.winBurstIntervalMs);
 }
 
 export function showLoseScreen(): void {
@@ -42,5 +42,5 @@ export function showLoseScreen(): void {
     waves++;
     launchRain();
     if (waves >= ANIM.loseRainWaves) clearInterval(interval);
-  }, 1200);
+  }, ANIM.losRainIntervalMs);
 }

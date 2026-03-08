@@ -37,6 +37,12 @@ export const ANIM = {
   rainShakeFrames: 20,
   winConfettiBursts: 5,
   loseRainWaves: 3,
+  /** Delay (ms) between repeated confetti bursts on the win screen. */
+  winBurstIntervalMs: 800,
+  /** Delay (ms) between repeated rain waves on the lose screen. */
+  losRainIntervalMs: 1200,
+  /** Stagger (seconds) between each option button's reveal animation. */
+  optionRevealStaggerSec: 0.06,
 } as const;
 
 /** Per-round countdown duration. Decreases as score increases. */

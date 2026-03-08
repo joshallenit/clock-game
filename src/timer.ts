@@ -41,37 +41,34 @@ function updateTimerDisplay(): void {
   }
 }
 
-let roundTimeoutId: ReturnType<typeof setTimeout> | null = null;
-let activeTimeoutCallback: (() => void) | null = null;
-
 function clearRoundTimeout(): void {
-  if (roundTimeoutId !== null) {
-    clearTimeout(roundTimeoutId);
-    roundTimeoutId = null;
+  if (state.roundTimeoutId !== null) {
+    clearTimeout(state.roundTimeoutId);
+    state.roundTimeoutId = null;
   }
-  activeTimeoutCallback = null;
+  state.activeTimeoutCallback = null;
 }
 
 // When the tab becomes visible again, re-sync the authoritative timeout
 // so it fires at the correct wall-clock time (browsers throttle setInterval
 // and setTimeout in background tabs, which could delay the timeout).
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden || !activeTimeoutCallback) return;
+  if (document.hidden || !state.activeTimeoutCallback) return;
 
   const elapsed = Date.now() - state.roundStart;
   state.remainingMs = Math.max(0, state.roundDuration - elapsed);
 
   if (state.remainingMs <= 0) {
     clearRoundTimeout();
-    const cb = activeTimeoutCallback;
-    activeTimeoutCallback = null;
+    const cb = state.activeTimeoutCallback;
+    state.activeTimeoutCallback = null;
     cb();
   } else {
-    if (roundTimeoutId !== null) clearTimeout(roundTimeoutId);
-    const cb = activeTimeoutCallback;
-    roundTimeoutId = setTimeout(() => {
-      roundTimeoutId = null;
-      activeTimeoutCallback = null;
+    if (state.roundTimeoutId !== null) clearTimeout(state.roundTimeoutId);
+    const cb = state.activeTimeoutCallback;
+    state.roundTimeoutId = setTimeout(() => {
+      state.roundTimeoutId = null;
+      state.activeTimeoutCallback = null;
       if (state.timerInterval) clearInterval(state.timerInterval);
       cb();
       updateTimerDisplay();
@@ -86,14 +83,14 @@ export function startRoundTimer(onTimeout: () => void): void {
   state.roundDuration = getTimeLimitMs(state.score);
   state.remainingMs = state.roundDuration;
   state.roundStart = Date.now();
-  activeTimeoutCallback = onTimeout;
+  state.activeTimeoutCallback = onTimeout;
   updateTimerDisplay();
   startElapsedTimer();
 
   // Authoritative timeout — fires at the correct time even if setInterval drifts
-  roundTimeoutId = setTimeout(() => {
-    roundTimeoutId = null;
-    activeTimeoutCallback = null;
+  state.roundTimeoutId = setTimeout(() => {
+    state.roundTimeoutId = null;
+    state.activeTimeoutCallback = null;
     if (state.timerInterval) clearInterval(state.timerInterval);
     onTimeout();
     updateTimerDisplay();

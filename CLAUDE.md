@@ -37,11 +37,13 @@ Shared by many:
 
 ## Key patterns
 
-- **All mutable state lives in `state.ts`** — one object, no hidden module-level `let` vars.
+- **All mutable state lives in `state.ts`** — one object, no hidden module-level `let` vars. This includes timer internals (`roundTimeoutId`, `activeTimeoutCallback`).
+- **Rendering-only local state is the documented exception** — `effects.ts` (`fxState`) and `dog.ts` (`dogAnim`/`sadDogAnim`) keep animation refs locally because they don't affect game logic. Each is commented inline.
 - **`dom.ts` caches all DOM lookups** — every getElementById happens once at load time.
 - **Canvas drawing is immediate-mode** — clock.ts redraws the full face on every frame.
 - **Effects overlay** — confetti and rain share a single full-screen canvas (`#confetti-canvas`), also used by dog animations.
 - **Color scheme** — CSS vars handle DOM styling; `colors.ts` COLORS object handles canvas. Both must stay in sync.
+- **Named constants over magic numbers** — timing values, frame counts, and game rules live in `constants.ts`. Inline numbers are reserved for particle physics and sprite geometry where the visual meaning is self-evident from context.
 - **Difficulty progression** — clock numbers hide at score 4/6, minute precision changes at score 7, timer shortens at score 8/9.
 
 ## Commands

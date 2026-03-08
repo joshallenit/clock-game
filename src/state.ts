@@ -16,4 +16,6 @@ export const state: GameState = {
   elapsedStart: 0,
   roundStart: 0,
   roundDuration: 0,
+  roundTimeoutId: null,
+  activeTimeoutCallback: null,
 };

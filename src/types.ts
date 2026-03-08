@@ -14,10 +14,14 @@ export interface GameState {
   /** Active requestAnimationFrame ID for the clock spin transition. */
   spinAnimId: number | null;
 
-  // Timer internals (previously module-level lets in timer.ts)
+  // Timer internals
   elapsedStart: number;
   roundStart: number;
   roundDuration: number;
+  /** setTimeout ID for the authoritative round timeout (fires even if setInterval drifts). */
+  roundTimeoutId: ReturnType<typeof setTimeout> | null;
+  /** Callback to invoke when the round timer expires. Stored so the visibilitychange handler can call it if the tab was backgrounded past the deadline. */
+  activeTimeoutCallback: (() => void) | null;
 }
 
 /** Typed references to every DOM element the game interacts with. */

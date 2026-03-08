@@ -1,5 +1,5 @@
 // Round orchestration: pick time, lock/unlock controls, handle answers, transitions.
-import { RULES } from "./constants";
+import { RULES, ANIM } from "./constants";
 import { onColorSchemeChange } from "./colors";
 import { dom } from "./dom";
 import { state } from "./state";
@@ -31,6 +31,31 @@ function disableOptions(): void {
   }
 }
 
+function createOptionButton(label: string, index: number): HTMLButtonElement {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "option-btn reveal";
+  btn.style.animationDelay = index * ANIM.optionRevealStaggerSec + "s";
+  btn.textContent = label;
+  btn.addEventListener("click", () => handleOptionClick(label, btn));
+  return btn;
+}
+
+function revealOptions(options: ReturnType<typeof generateOptions>, hintBtn: HTMLButtonElement): void {
+  state.elapsedMs += RULES.hintPenaltyMs;
+  const startHeight = dom.optionsPanel.scrollHeight;
+  dom.optionsPanel.style.maxHeight = startHeight + "px";
+  hintBtn.remove();
+
+  for (let i = 0; i < options.length; i++) {
+    dom.optionsPanel.appendChild(createOptionButton(options[i].label, i));
+  }
+
+  requestAnimationFrame(() => {
+    dom.optionsPanel.style.maxHeight = dom.optionsPanel.scrollHeight + "px";
+  });
+}
+
 function renderOptions(): void {
   dom.optionsPanel.innerHTML = "";
   dom.optionsPanel.style.maxHeight = "";
@@ -41,24 +66,7 @@ function renderOptions(): void {
   hintBtn.type = "button";
   hintBtn.className = "option-btn hint-btn";
   hintBtn.textContent = "Hint...";
-  hintBtn.addEventListener("click", () => {
-    state.elapsedMs += RULES.hintPenaltyMs;
-    const startHeight = dom.optionsPanel.scrollHeight;
-    dom.optionsPanel.style.maxHeight = startHeight + "px";
-    hintBtn.remove();
-    options.forEach((opt, i) => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "option-btn reveal";
-      btn.style.animationDelay = i * 0.06 + "s";
-      btn.textContent = opt.label;
-      btn.addEventListener("click", () => handleOptionClick(opt.label, btn));
-      dom.optionsPanel.appendChild(btn);
-    });
-    requestAnimationFrame(() => {
-      dom.optionsPanel.style.maxHeight = dom.optionsPanel.scrollHeight + "px";
-    });
-  });
+  hintBtn.addEventListener("click", () => revealOptions(options, hintBtn));
 
   dom.optionsPanel.appendChild(hintBtn);
   requestAnimationFrame(() => {

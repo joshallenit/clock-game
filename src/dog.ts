@@ -12,6 +12,7 @@ const fxCtx = getContext2D(fxCanvas);
 
 const S = 1.2; // sprite scale factor
 
+// Rendering-only animation refs (not in state.ts because they don't affect game logic)
 const dogAnim: AnimRef = { id: null };
 const sadDogAnim: AnimRef = { id: null };
 
