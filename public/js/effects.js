@@ -1,4 +1,8 @@
-import { CONFETTI_COLORS, dom } from "./config.js";
+import {
+  CONFETTI_COLORS, COLORS,
+  CONFETTI_PARTICLE_COUNT, RAIN_PARTICLE_COUNT, RAIN_SHAKE_FRAMES,
+  dom,
+} from "./config.js";
 
 const canvas = dom.confettiCanvas;
 const ctx = canvas.getContext("2d");
@@ -27,7 +31,7 @@ export function launchConfetti() {
   const cx = canvas.width / 2;
   const cy = canvas.height / 2;
 
-  for (let i = 0; i < 200; i++) {
+  for (let i = 0; i < CONFETTI_PARTICLE_COUNT; i++) {
     const angle = Math.random() * Math.PI * 2;
     const speed = Math.random() * 18 + 6;
     confettiParticles.push({
@@ -88,7 +92,7 @@ export function launchRain() {
   const cw = canvas.width;
   const ch = canvas.height;
 
-  for (let i = 0; i < 200; i++) {
+  for (let i = 0; i < RAIN_PARTICLE_COUNT; i++) {
     rainParticles.push({
       x: Math.random() * cw,
       y: Math.random() * -ch,
@@ -99,7 +103,7 @@ export function launchRain() {
     });
   }
 
-  rainShakeFrames = 20;
+  rainShakeFrames = RAIN_SHAKE_FRAMES;
   animateRain();
 }
 
@@ -108,7 +112,6 @@ function animateRain() {
   const ch = canvas.height;
   ctx.clearRect(0, 0, cw, ch);
 
-  // Screen shake
   if (rainShakeFrames > 0) {
     rainShakeFrames--;
     const shakeX = (Math.random() - 0.5) * 12;
@@ -118,7 +121,6 @@ function animateRain() {
     canvas.style.transform = "";
   }
 
-  // Dark overlay
   let alive = false;
   let maxLife = 0;
   for (const p of rainParticles) {
@@ -136,10 +138,10 @@ function animateRain() {
 
     ctx.save();
     ctx.globalAlpha = Math.max(0, p.life) * 0.8;
-    ctx.strokeStyle = "#6899cc";
+    ctx.strokeStyle = COLORS.rain;
     ctx.lineWidth = 3;
     ctx.lineCap = "round";
-    ctx.shadowColor = "#6899cc";
+    ctx.shadowColor = COLORS.rain;
     ctx.shadowBlur = 6;
     ctx.beginPath();
     ctx.moveTo(p.x, p.y);

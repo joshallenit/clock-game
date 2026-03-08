@@ -1,71 +1,17 @@
 import {
   WINNING_SCORE, MAX_MISTAKES, RANDOM_MINUTES_AT,
-  CLOCK_RADIUS, COLORS,
-  getTimeLimitMs, dom, state,
+  CLOCK_RADIUS, COLORS, SPIN_FRAMES, HINT_PENALTY_MS,
+  WIN_CONFETTI_BURSTS, LOSE_RAIN_WAVES,
+  dom, state,
 } from "./config.js";
 import { formatTime } from "./utils.js";
-import { drawClockAt, drawClockFace, drawHand, drawCenterDot } from "./clock.js";
+import { drawClockFace, drawHand, drawCenterDot } from "./clock.js";
 import { generateOptions } from "./options.js";
 import { launchConfetti, launchRain } from "./effects.js";
 import { launchDog, launchDogReverse, launchDogApproach, launchSadDog } from "./dog.js";
 import { playCorrectSound, playIncorrectSound, playWhineSound, playGameOverSound } from "./audio.js";
 import { isNewRecord, promptForName, updateRecordBanner } from "./records.js";
-
-// --- Elapsed timer ---
-
-function updateElapsedDisplay() {
-  const totalSecs = Math.floor(state.elapsedMs / 1000);
-  const mins = Math.floor(totalSecs / 60);
-  const secs = totalSecs % 60;
-  const tenths = Math.floor((state.elapsedMs % 1000) / 100);
-  dom.elapsed.textContent = `${mins}:${String(secs).padStart(2, "0")}.${tenths}`;
-}
-
-function startElapsedTimer() {
-  clearInterval(state.elapsedInterval);
-  state.elapsedInterval = setInterval(() => {
-    state.elapsedMs += 100;
-    updateElapsedDisplay();
-  }, 100);
-}
-
-function stopElapsedTimer() {
-  clearInterval(state.elapsedInterval);
-}
-
-// --- Round timer ---
-
-function updateTimerDisplay() {
-  const totalSecs = Math.ceil(state.remainingMs / 1000);
-  const mins = Math.floor(totalSecs / 60);
-  const secs = totalSecs % 60;
-  dom.timer.textContent = `${mins}:${String(secs).padStart(2, "0")}`;
-
-  const fraction = state.remainingMs / getTimeLimitMs(state.score);
-  if (fraction <= 0.25) {
-    dom.timer.className = "critical";
-  } else if (fraction <= 0.5) {
-    dom.timer.className = "warning";
-  } else {
-    dom.timer.className = "";
-  }
-}
-
-function startTimer() {
-  clearInterval(state.timerInterval);
-  state.remainingMs = getTimeLimitMs(state.score);
-  updateTimerDisplay();
-  startElapsedTimer();
-  state.timerInterval = setInterval(() => {
-    state.remainingMs -= 100;
-    if (state.remainingMs <= 0) {
-      state.remainingMs = 0;
-      clearInterval(state.timerInterval);
-      handleTimeout();
-    }
-    updateTimerDisplay();
-  }, 100);
-}
+import { updateElapsedDisplay, startElapsedTimer, stopElapsedTimer, startRoundTimer, stopRoundTimer } from "./timer.js";
 
 // --- Mistakes display ---
 
@@ -92,8 +38,7 @@ function renderOptions() {
   hintBtn.className = "option-btn hint-btn";
   hintBtn.textContent = "Hint...";
   hintBtn.addEventListener("click", () => {
-    state.elapsedMs += 30000;
-    // Lock current height before changing content
+    state.elapsedMs += HINT_PENALTY_MS;
     const startHeight = dom.optionsPanel.scrollHeight;
     dom.optionsPanel.style.maxHeight = startHeight + "px";
     hintBtn.remove();
@@ -105,7 +50,6 @@ function renderOptions() {
       btn.addEventListener("click", () => handleOptionClick(opt.label, correctLabel, btn));
       dom.optionsPanel.appendChild(btn);
     });
-    // Animate to new height on next frame
     requestAnimationFrame(() => {
       dom.optionsPanel.style.maxHeight = dom.optionsPanel.scrollHeight + "px";
     });
@@ -132,7 +76,6 @@ let spinAnim = null;
 
 function spinHandsToTarget(onComplete) {
   cancelAnimationFrame(spinAnim);
-  const totalFrames = 120;
   let frame = 0;
 
   const startMinAngle = Math.random() * Math.PI * 2;
@@ -147,8 +90,8 @@ function spinHandsToTarget(onComplete) {
 
   function animate() {
     frame++;
-    const t = frame / totalFrames;
-    const ease = 1 - Math.pow(1 - t, 5); // quintic ease-out
+    const t = frame / SPIN_FRAMES;
+    const ease = 1 - Math.pow(1 - t, 5);
 
     const currentMin = startMinAngle + (endMinAngle - startMinAngle) * ease;
     const currentHour = startHourAngle + (endHourAngle - startHourAngle) * ease;
@@ -158,7 +101,7 @@ function spinHandsToTarget(onComplete) {
     drawHand(currentMin, CLOCK_RADIUS * 0.7, 4, COLORS.accent);
     drawCenterDot();
 
-    if (frame < totalFrames) {
+    if (frame < SPIN_FRAMES) {
       spinAnim = requestAnimationFrame(animate);
     } else {
       if (onComplete) onComplete();
@@ -168,7 +111,7 @@ function spinHandsToTarget(onComplete) {
   animate();
 }
 
-// --- Unlock controls after transition ---
+// --- Controls lock/unlock ---
 
 function unlockControls() {
   state.transitioning = false;
@@ -176,7 +119,7 @@ function unlockControls() {
   dom.submitBtn.disabled = false;
   renderOptions();
   dom.answer.focus();
-  startTimer();
+  startRoundTimer(handleTimeout);
 }
 
 function lockControls() {
@@ -188,11 +131,12 @@ function lockControls() {
 
 // --- Round transitions ---
 
+const happyDogAnims = [launchDog, launchDogReverse, launchDogApproach];
+
 function transitionToNextRound() {
   lockControls();
   pickRandomTime();
-  const dogAnims = [launchDog, launchDogReverse, launchDogApproach];
-  const dogAnim = dogAnims[Math.floor(Math.random() * dogAnims.length)];
+  const dogAnim = happyDogAnims[Math.floor(Math.random() * happyDogAnims.length)];
   dogAnim(() => spinHandsToTarget(unlockControls));
 }
 
@@ -210,12 +154,12 @@ function spinToNextRound() {
   spinHandsToTarget(unlockControls);
 }
 
-// --- Handle correct / incorrect / timeout ---
+// --- Handle correct answer ---
 
 function handleCorrect(btn) {
   if (btn) btn.classList.add("correct-pick");
   state.score++;
-  clearInterval(state.timerInterval);
+  stopRoundTimer();
   dom.score.textContent = `Score: ${state.score}/${WINNING_SCORE}`;
 
   if (state.score >= WINNING_SCORE) {
@@ -232,7 +176,9 @@ function handleCorrect(btn) {
   transitionToNextRound();
 }
 
-function handleIncorrect(btn) {
+// --- Handle mistake (shared by incorrect answer and timeout) ---
+
+function handleMistake(feedbackText, btn) {
   if (btn) {
     btn.classList.add("incorrect-pick");
     btn.disabled = true;
@@ -241,46 +187,32 @@ function handleIncorrect(btn) {
   state.mistakes++;
   updateMistakesDisplay();
 
-  const correctAnswer = formatTime(state.targetHours, state.targetMinutes);
-  dom.feedback.textContent = "Incorrect! It was " + correctAnswer;
+  dom.feedback.textContent = feedbackText;
   dom.feedback.className = "incorrect";
   launchRain();
   playIncorrectSound();
   playWhineSound();
 
+  stopRoundTimer();
+  dom.answer.value = "";
+  disableOptions();
+
   if (state.mistakes >= MAX_MISTAKES) {
-    clearInterval(state.timerInterval);
-    dom.answer.value = "";
-    disableOptions();
     showLoseScreen();
     return;
   }
 
-  clearInterval(state.timerInterval);
-  dom.answer.value = "";
-  disableOptions();
   sadDogTransition();
 }
 
-function handleTimeout() {
-  state.mistakes++;
-  updateMistakesDisplay();
-
+function handleIncorrect(btn) {
   const correctAnswer = formatTime(state.targetHours, state.targetMinutes);
-  dom.feedback.textContent = "Time's up! It was " + correctAnswer;
-  dom.feedback.className = "incorrect";
-  launchRain();
-  playIncorrectSound();
-  playWhineSound();
-  dom.answer.value = "";
-  disableOptions();
+  handleMistake("Incorrect! It was " + correctAnswer, btn);
+}
 
-  if (state.mistakes >= MAX_MISTAKES) {
-    showLoseScreen();
-    return;
-  }
-
-  sadDogTransition();
+function handleTimeout() {
+  const correctAnswer = formatTime(state.targetHours, state.targetMinutes);
+  handleMistake("Time's up! It was " + correctAnswer, null);
 }
 
 // --- Option click handler ---
@@ -330,7 +262,7 @@ function showWinScreen() {
   const interval = setInterval(() => {
     bursts++;
     launchConfetti();
-    if (bursts >= 5) {
+    if (bursts >= WIN_CONFETTI_BURSTS) {
       clearInterval(interval);
       if (isNewRecord(state.elapsedMs)) {
         promptForName(state.elapsedMs);
@@ -351,7 +283,7 @@ function showLoseScreen() {
   const interval = setInterval(() => {
     waves++;
     launchRain();
-    if (waves >= 3) clearInterval(interval);
+    if (waves >= LOSE_RAIN_WAVES) clearInterval(interval);
   }, 1200);
 }
 

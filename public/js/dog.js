@@ -1,4 +1,8 @@
-import { CLOCK_SIZE, CLOCK_CENTER, COLORS, dom } from "./config.js";
+import {
+  CLOCK_CENTER, COLORS,
+  DOG_RUN_FRAMES, DOG_APPROACH_FRAMES, SAD_DOG_FRAMES,
+  dom,
+} from "./config.js";
 import { drawClockFace } from "./clock.js";
 
 const clockCtx = dom.clock.getContext("2d");
@@ -9,15 +13,36 @@ const S = 1.2; // sprite scale
 let dogAnim = null;
 let sadDogAnim = null;
 
-// --- Happy dog (runs across clock on correct answer) ---
+// --- Shared animation loop ---
+
+function runAnimation(totalFrames, animRef, drawFrame, onComplete) {
+  cancelAnimationFrame(animRef.id);
+  let frame = 0;
+
+  function step() {
+    frame++;
+    drawFrame(frame, frame / totalFrames);
+
+    if (frame < totalFrames) {
+      animRef.id = requestAnimationFrame(step);
+    } else {
+      if (onComplete) onComplete();
+    }
+  }
+
+  step();
+}
+
+// --- Happy dog (side view, runs across screen) ---
 
 function drawHappyDog(c, cx, cy, facingRight) {
   c.save();
   c.translate(cx, cy);
   if (!facingRight) c.scale(-1, 1);
 
-  // Body
   c.fillStyle = COLORS.dog;
+
+  // Body
   c.beginPath();
   c.ellipse(0, 0, 28 * S, 18 * S, 0, 0, Math.PI * 2);
   c.fill();
@@ -51,12 +76,10 @@ function drawHappyDog(c, cx, cy, facingRight) {
   c.ellipse(38 * S, -3 * S, 3 * S, 6 * S, 0.2, 0, Math.PI * 2);
   c.fill();
 
-  // Front legs
+  // Legs
   c.fillStyle = COLORS.dog;
   c.fillRect(12 * S, 12 * S, 6 * S, 20 * S);
   c.fillRect(20 * S, 12 * S, 6 * S, 20 * S);
-
-  // Back legs
   c.fillRect(-18 * S, 12 * S, 6 * S, 20 * S);
   c.fillRect(-10 * S, 12 * S, 6 * S, 20 * S);
 
@@ -72,134 +95,82 @@ function drawHappyDog(c, cx, cy, facingRight) {
   c.restore();
 }
 
-export function launchDog(onComplete) {
-  cancelAnimationFrame(dogAnim);
+function launchDogHorizontal(facingRight, onComplete) {
   const screenW = fxCanvas.width;
   const screenH = fxCanvas.height;
-  const startX = -100;
-  const endX = screenW + 100;
+  const startX = facingRight ? -100 : screenW + 100;
+  const endX = facingRight ? screenW + 100 : -100;
   const groundY = screenH * 0.55;
   const jumpHeight = screenH * 0.3;
-  const totalFrames = 180;
-  let frame = 0;
+  const ref = { id: dogAnim };
 
   drawClockFace();
 
-  function animate() {
+  runAnimation(DOG_RUN_FRAMES, ref, (frame, t) => {
     fxCtx.clearRect(0, 0, screenW, screenH);
-    frame++;
-    const t = frame / totalFrames;
     const x = startX + (endX - startX) * t;
     const bounceT = (t * 3) % 1;
     const y = groundY - jumpHeight * 4 * bounceT * (1 - bounceT);
+    drawHappyDog(fxCtx, x, y, facingRight);
+  }, () => {
+    fxCtx.clearRect(0, 0, screenW, screenH);
+    dogAnim = ref.id;
+    if (onComplete) onComplete();
+  });
 
-    drawHappyDog(fxCtx, x, y, true);
+  dogAnim = ref.id;
+}
 
-    if (frame < totalFrames) {
-      dogAnim = requestAnimationFrame(animate);
-    } else {
-      fxCtx.clearRect(0, 0, screenW, screenH);
-      if (onComplete) onComplete();
-    }
-  }
-
-  animate();
+export function launchDog(onComplete) {
+  launchDogHorizontal(true, onComplete);
 }
 
 export function launchDogReverse(onComplete) {
-  cancelAnimationFrame(dogAnim);
-  const screenW = fxCanvas.width;
-  const screenH = fxCanvas.height;
-  const startX = screenW + 100;
-  const endX = -100;
-  const groundY = screenH * 0.55;
-  const jumpHeight = screenH * 0.3;
-  const totalFrames = 180;
-  let frame = 0;
-
-  drawClockFace();
-
-  function animate() {
-    fxCtx.clearRect(0, 0, screenW, screenH);
-    frame++;
-    const t = frame / totalFrames;
-    const x = startX + (endX - startX) * t;
-    const bounceT = (t * 3) % 1;
-    const y = groundY - jumpHeight * 4 * bounceT * (1 - bounceT);
-
-    drawHappyDog(fxCtx, x, y, false);
-
-    if (frame < totalFrames) {
-      dogAnim = requestAnimationFrame(animate);
-    } else {
-      fxCtx.clearRect(0, 0, screenW, screenH);
-      if (onComplete) onComplete();
-    }
-  }
-
-  animate();
+  launchDogHorizontal(false, onComplete);
 }
 
-// --- Front-facing dog with running legs ---
+// --- Front-facing dog (runs toward camera) ---
 
 function drawFrontDog(c, cx, cy, legPhase) {
   c.save();
   c.translate(cx, cy);
 
-  // Leg animation: legs splay outward alternately
   const legSwing = Math.sin(legPhase) * 12;
 
   // Back legs (behind body)
   c.fillStyle = COLORS.dogDark;
-  // Left back leg
-  c.save();
-  c.translate(-14 * S, 16 * S);
-  c.rotate((-legSwing * 0.7) * Math.PI / 180 * 3);
-  c.fillRect(-3 * S, 0, 6 * S, 22 * S);
-  // Paw
-  c.beginPath();
-  c.ellipse(0, 22 * S, 5 * S, 3 * S, 0, 0, Math.PI * 2);
-  c.fill();
-  c.restore();
-  // Right back leg
-  c.save();
-  c.translate(14 * S, 16 * S);
-  c.rotate((legSwing * 0.7) * Math.PI / 180 * 3);
-  c.fillRect(-3 * S, 0, 6 * S, 22 * S);
-  c.beginPath();
-  c.ellipse(0, 22 * S, 5 * S, 3 * S, 0, 0, Math.PI * 2);
-  c.fill();
-  c.restore();
+  for (const side of [-1, 1]) {
+    c.save();
+    c.translate(side * 14 * S, 16 * S);
+    c.rotate(side * legSwing * 0.7 * Math.PI / 180 * 3);
+    c.fillRect(-3 * S, 0, 6 * S, 22 * S);
+    c.beginPath();
+    c.ellipse(0, 22 * S, 5 * S, 3 * S, 0, 0, Math.PI * 2);
+    c.fill();
+    c.restore();
+  }
 
-  // Body (front-facing oval, slightly wider than tall)
+  // Body
   c.fillStyle = COLORS.dog;
   c.beginPath();
   c.ellipse(0, 4 * S, 24 * S, 20 * S, 0, 0, Math.PI * 2);
   c.fill();
 
-  // Front legs (in front of body)
+  // Front legs
   c.fillStyle = COLORS.dog;
-  // Left front leg
-  c.save();
-  c.translate(-10 * S, 16 * S);
-  c.rotate((-legSwing) * Math.PI / 180 * 3);
-  c.fillRect(-3 * S, 0, 7 * S, 20 * S);
-  c.beginPath();
-  c.ellipse(0.5 * S, 20 * S, 5 * S, 3.5 * S, 0, 0, Math.PI * 2);
-  c.fill();
-  c.restore();
-  // Right front leg
-  c.save();
-  c.translate(10 * S, 16 * S);
-  c.rotate((legSwing) * Math.PI / 180 * 3);
-  c.fillRect(-3 * S, 0, 7 * S, 20 * S);
-  c.beginPath();
-  c.ellipse(0.5 * S, 20 * S, 5 * S, 3.5 * S, 0, 0, Math.PI * 2);
-  c.fill();
-  c.restore();
+  for (const side of [-1, 1]) {
+    c.save();
+    c.translate(side * 10 * S, 16 * S);
+    c.rotate(side * legSwing * Math.PI / 180 * 3);
+    c.fillRect(-3 * S, 0, 7 * S, 20 * S);
+    c.beginPath();
+    c.ellipse(0.5 * S, 20 * S, 5 * S, 3.5 * S, 0, 0, Math.PI * 2);
+    c.fill();
+    c.restore();
+  }
 
   // Chest patch
-  c.fillStyle = "#d4975a";
+  c.fillStyle = COLORS.dogChest;
   c.beginPath();
   c.ellipse(0, 8 * S, 12 * S, 10 * S, 0, 0, Math.PI * 2);
   c.fill();
@@ -210,31 +181,28 @@ function drawFrontDog(c, cx, cy, legPhase) {
   c.ellipse(0, -20 * S, 18 * S, 16 * S, 0, 0, Math.PI * 2);
   c.fill();
 
-  // Ears (floppy, hanging down on sides)
+  // Ears
   c.fillStyle = COLORS.dogDark;
-  // Left ear
-  c.beginPath();
-  c.ellipse(-18 * S, -16 * S, 8 * S, 14 * S, -0.3, 0, Math.PI * 2);
-  c.fill();
-  // Right ear
-  c.beginPath();
-  c.ellipse(18 * S, -16 * S, 8 * S, 14 * S, 0.3, 0, Math.PI * 2);
-  c.fill();
+  for (const side of [-1, 1]) {
+    c.beginPath();
+    c.ellipse(side * 18 * S, -16 * S, 8 * S, 14 * S, side * 0.3, 0, Math.PI * 2);
+    c.fill();
+  }
 
   // Muzzle
-  c.fillStyle = "#d4975a";
+  c.fillStyle = COLORS.dogChest;
   c.beginPath();
   c.ellipse(0, -14 * S, 10 * S, 8 * S, 0, 0, Math.PI * 2);
   c.fill();
 
   // Eyes
   c.fillStyle = "#222";
-  c.beginPath();
-  c.arc(-7 * S, -24 * S, 3.5 * S, 0, Math.PI * 2);
-  c.fill();
-  c.beginPath();
-  c.arc(7 * S, -24 * S, 3.5 * S, 0, Math.PI * 2);
-  c.fill();
+  for (const side of [-1, 1]) {
+    c.beginPath();
+    c.arc(side * 7 * S, -24 * S, 3.5 * S, 0, Math.PI * 2);
+    c.fill();
+  }
+
   // Eye shine
   c.fillStyle = "#fff";
   c.beginPath();
@@ -250,7 +218,7 @@ function drawFrontDog(c, cx, cy, legPhase) {
   c.ellipse(0, -15 * S, 4 * S, 3 * S, 0, 0, Math.PI * 2);
   c.fill();
 
-  // Tongue (happy, hanging out)
+  // Tongue
   c.fillStyle = COLORS.incorrect;
   c.beginPath();
   c.ellipse(3 * S, -8 * S, 4 * S, 7 * S, 0.15, 0, Math.PI * 2);
@@ -260,35 +228,25 @@ function drawFrontDog(c, cx, cy, legPhase) {
 }
 
 export function launchDogApproach(onComplete) {
-  cancelAnimationFrame(dogAnim);
   const screenW = fxCanvas.width;
   const screenH = fxCanvas.height;
-  const totalFrames = 200;
-  let frame = 0;
-
   const startScale = 0.3;
   const endScale = 5;
   const startY = screenH * 0.45;
   const endY = -200;
   const cx = screenW / 2;
+  const ref = { id: dogAnim };
 
   drawClockFace();
 
-  function animate() {
+  runAnimation(DOG_APPROACH_FRAMES, ref, (frame, t) => {
     fxCtx.clearRect(0, 0, screenW, screenH);
-    frame++;
-    const t = frame / totalFrames;
     const ease = t * t;
-
     const scale = startScale + (endScale - startScale) * ease;
     const baseY = startY + (endY - startY) * ease;
-
-    // Bounce while running, amplitude grows with scale
     const bounceT = (t * 10) % 1;
     const bounceHeight = 12 * scale * 0.3;
     const y = baseY - bounceHeight * 4 * bounceT * (1 - bounceT);
-
-    // Legs cycle faster as dog gets closer
     const legPhase = t * 45;
 
     fxCtx.save();
@@ -297,64 +255,57 @@ export function launchDogApproach(onComplete) {
     fxCtx.translate(-cx, -y);
     drawFrontDog(fxCtx, cx, y, legPhase);
     fxCtx.restore();
+  }, () => {
+    fxCtx.clearRect(0, 0, screenW, screenH);
+    dogAnim = ref.id;
+    if (onComplete) onComplete();
+  });
 
-    if (frame < totalFrames) {
-      dogAnim = requestAnimationFrame(animate);
-    } else {
-      fxCtx.clearRect(0, 0, screenW, screenH);
-      if (onComplete) onComplete();
-    }
-  }
-
-  animate();
+  dogAnim = ref.id;
 }
 
-// --- Sad dog (sits and bobs head on incorrect answer) ---
+// --- Sad dog (sits on clock face and bobs head) ---
 
 function drawSadDog(cx, cy, headBob) {
   clockCtx.save();
   clockCtx.translate(cx, cy);
 
-  // Body (sitting posture)
+  // Body
   clockCtx.fillStyle = COLORS.dog;
   clockCtx.beginPath();
   clockCtx.ellipse(0, 4 * S, 24 * S, 20 * S, 0, 0, Math.PI * 2);
   clockCtx.fill();
 
-  // Head (drooped)
+  // Head
   clockCtx.beginPath();
   clockCtx.ellipse(0, -22 * S + headBob, 16 * S, 14 * S, 0, 0, Math.PI * 2);
   clockCtx.fill();
 
-  // Floppy ears
+  // Ears
   clockCtx.fillStyle = COLORS.dogDark;
-  clockCtx.beginPath();
-  clockCtx.ellipse(-14 * S, -18 * S + headBob, 7 * S, 14 * S, -0.4, 0, Math.PI * 2);
-  clockCtx.fill();
-  clockCtx.beginPath();
-  clockCtx.ellipse(14 * S, -18 * S + headBob, 7 * S, 14 * S, 0.4, 0, Math.PI * 2);
-  clockCtx.fill();
+  for (const side of [-1, 1]) {
+    clockCtx.beginPath();
+    clockCtx.ellipse(side * 14 * S, -18 * S + headBob, 7 * S, 14 * S, side * 0.4, 0, Math.PI * 2);
+    clockCtx.fill();
+  }
 
   // Half-closed eyes
   clockCtx.fillStyle = "#222";
-  clockCtx.beginPath();
-  clockCtx.ellipse(-6 * S, -24 * S + headBob, 3 * S, 1.5 * S, 0, 0, Math.PI * 2);
-  clockCtx.fill();
-  clockCtx.beginPath();
-  clockCtx.ellipse(6 * S, -24 * S + headBob, 3 * S, 1.5 * S, 0, 0, Math.PI * 2);
-  clockCtx.fill();
+  for (const side of [-1, 1]) {
+    clockCtx.beginPath();
+    clockCtx.ellipse(side * 6 * S, -24 * S + headBob, 3 * S, 1.5 * S, 0, 0, Math.PI * 2);
+    clockCtx.fill();
+  }
 
   // Sad eyebrows
   clockCtx.strokeStyle = COLORS.dogDark;
   clockCtx.lineWidth = 2 * S;
-  clockCtx.beginPath();
-  clockCtx.moveTo(-10 * S, -28 * S + headBob);
-  clockCtx.lineTo(-3 * S, -26 * S + headBob);
-  clockCtx.stroke();
-  clockCtx.beginPath();
-  clockCtx.moveTo(10 * S, -28 * S + headBob);
-  clockCtx.lineTo(3 * S, -26 * S + headBob);
-  clockCtx.stroke();
+  for (const side of [-1, 1]) {
+    clockCtx.beginPath();
+    clockCtx.moveTo(side * 10 * S, -28 * S + headBob);
+    clockCtx.lineTo(side * 3 * S, -26 * S + headBob);
+    clockCtx.stroke();
+  }
 
   // Nose
   clockCtx.fillStyle = "#333";
@@ -371,12 +322,11 @@ function drawSadDog(cx, cy, headBob) {
 
   // Front paws
   clockCtx.fillStyle = COLORS.dog;
-  clockCtx.beginPath();
-  clockCtx.ellipse(-10 * S, 22 * S, 6 * S, 4 * S, 0, 0, Math.PI * 2);
-  clockCtx.fill();
-  clockCtx.beginPath();
-  clockCtx.ellipse(10 * S, 22 * S, 6 * S, 4 * S, 0, 0, Math.PI * 2);
-  clockCtx.fill();
+  for (const side of [-1, 1]) {
+    clockCtx.beginPath();
+    clockCtx.ellipse(side * 10 * S, 22 * S, 6 * S, 4 * S, 0, 0, Math.PI * 2);
+    clockCtx.fill();
+  }
 
   // Drooping tail
   clockCtx.strokeStyle = COLORS.dog;
@@ -399,23 +349,17 @@ function drawSadDog(cx, cy, headBob) {
 }
 
 export function launchSadDog(onComplete) {
-  cancelAnimationFrame(sadDogAnim);
-  const totalFrames = 120;
-  let frame = 0;
+  const ref = { id: sadDogAnim };
 
-  function animate() {
+  runAnimation(SAD_DOG_FRAMES, ref, (frame) => {
     drawClockFace();
-    frame++;
     const headBob = Math.sin(frame * 0.1) * 3;
     drawSadDog(CLOCK_CENTER, CLOCK_CENTER + 20, headBob);
+  }, () => {
+    drawClockFace();
+    sadDogAnim = ref.id;
+    if (onComplete) onComplete();
+  });
 
-    if (frame < totalFrames) {
-      sadDogAnim = requestAnimationFrame(animate);
-    } else {
-      drawClockFace();
-      if (onComplete) onComplete();
-    }
-  }
-
-  animate();
+  sadDogAnim = ref.id;
 }

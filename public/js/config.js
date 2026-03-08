@@ -20,6 +20,18 @@ export function getTimeLimitMs(score) {
   return Math.max(30000, 60000 - score * 5000);
 }
 
+// Animation frame counts
+export const SPIN_FRAMES = 120;
+export const DOG_RUN_FRAMES = 180;
+export const DOG_APPROACH_FRAMES = 200;
+export const SAD_DOG_FRAMES = 120;
+export const HINT_PENALTY_MS = 30000;
+export const CONFETTI_PARTICLE_COUNT = 200;
+export const RAIN_PARTICLE_COUNT = 200;
+export const RAIN_SHAKE_FRAMES = 20;
+export const WIN_CONFETTI_BURSTS = 5;
+export const LOSE_RAIN_WAVES = 3;
+
 // Colors
 export const COLORS = {
   background: "#1a1a2e",
@@ -32,6 +44,7 @@ export const COLORS = {
   gold: "#facc15",
   dog: "#c4813d",
   dogDark: "#9a6530",
+  dogChest: "#d4975a",
   rain: "#6899cc",
 };
 
@@ -59,7 +72,6 @@ export const dom = {
   nameSubmitBtn: document.getElementById("name-submit-btn"),
   newRecordTime: document.getElementById("new-record-time"),
   gameArea: document.getElementById("game-area"),
-  feedback: document.getElementById("feedback"),
   winScreen: document.getElementById("win-screen"),
   loseScreen: document.getElementById("lose-screen"),
   playAgainBtn: document.getElementById("play-again-btn"),
