@@ -1,3 +1,9 @@
+/*
+ * Color palette note: Canvas rendering in config.ts defines COLORS separately
+ * because canvas cannot use CSS custom properties directly. If you change colors
+ * here, update the COLORS/CONFETTI_COLORS objects in config.ts to match.
+ */
+
 :root {
   --color-bg: #1a1a2e;
   --color-panel: #16213e;
@@ -32,6 +38,11 @@
   box-sizing: border-box;
 }
 
+/* Ensure the hidden attribute always works regardless of specificity */
+[hidden] {
+  display: none !important;
+}
+
 body {
   display: flex;
   flex-direction: column;
@@ -57,11 +68,39 @@ body {
   border: 0;
 }
 
+/* --- Skip to content link --- */
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-accent);
+  color: var(--color-bg);
+  padding: 8px 16px;
+  border-radius: 0 0 6px 6px;
+  font-weight: bold;
+  z-index: 300;
+  text-decoration: none;
+  transition: top 0.2s;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
 /* --- Focus indicators --- */
 
 :focus-visible {
   outline: 3px solid var(--color-focus-ring);
   outline-offset: 2px;
+}
+
+/* --- Header --- */
+
+header {
+  text-align: center;
+  width: 100%;
 }
 
 #game-title {
@@ -118,6 +157,7 @@ canvas {
   cursor: pointer;
   min-width: 140px;
   text-align: center;
+  touch-action: manipulation;
   transition:
     background 0.15s,
     border-color 0.15s;
@@ -207,6 +247,7 @@ canvas {
   color: var(--color-text);
   text-align: center;
   width: 120px;
+  touch-action: manipulation;
 }
 
 #answer::placeholder {
@@ -222,6 +263,7 @@ canvas {
   color: var(--color-bg);
   cursor: pointer;
   font-weight: bold;
+  touch-action: manipulation;
 }
 
 #submit-btn:hover {
@@ -264,7 +306,7 @@ canvas {
 /* --- Win Screen --- */
 
 #win-screen {
-  display: none;
+  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -273,7 +315,7 @@ canvas {
   animation: fadeIn 1s ease;
 }
 
-#win-screen h1 {
+#win-screen h2 {
   font-size: 64px;
   background: linear-gradient(135deg, var(--color-gold), #fb923c, var(--color-incorrect), #c084fc, var(--color-accent));
   background-size: 300% 300%;
@@ -313,7 +355,7 @@ canvas {
   box-shadow: 0 0 40px rgba(250, 204, 21, 0.2);
 }
 
-#win-screen .prize-box h2 {
+#win-screen .prize-box h3 {
   font-size: 28px;
   color: var(--color-gold);
   margin-bottom: 16px;
@@ -328,6 +370,12 @@ canvas {
   font-size: 18px;
   line-height: 1.6;
   color: var(--color-modal-text);
+}
+
+#win-screen .prize-box .book-description {
+  margin-top: 16px;
+  font-size: 14px;
+  color: #888;
 }
 
 #win-screen .prize-box .book-title {
@@ -347,6 +395,7 @@ canvas {
   color: var(--color-bg);
   cursor: pointer;
   font-weight: bold;
+  touch-action: manipulation;
   transition: background 0.2s;
 }
 
@@ -357,7 +406,7 @@ canvas {
 /* --- Lose Screen --- */
 
 #lose-screen {
-  display: none;
+  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -366,7 +415,7 @@ canvas {
   animation: fadeIn 1s ease;
 }
 
-#lose-screen h1 {
+#lose-screen h2 {
   font-size: 64px;
   color: var(--color-incorrect);
 }
@@ -385,7 +434,7 @@ canvas {
   margin-bottom: 16px;
 }
 
-#lose-screen .lose-box h2 {
+#lose-screen .lose-box h3 {
   font-size: 28px;
   color: var(--color-incorrect);
   margin-bottom: 16px;
@@ -413,6 +462,7 @@ canvas {
   color: #fff;
   cursor: pointer;
   font-weight: bold;
+  touch-action: manipulation;
   transition: background 0.2s;
 }
 
@@ -456,7 +506,7 @@ canvas {
 /* --- Name Modal --- */
 
 #name-modal {
-  display: none;
+  display: flex;
   position: fixed;
   top: 0;
   left: 0;
@@ -506,6 +556,7 @@ canvas {
   text-align: center;
   width: 220px;
   margin-bottom: 16px;
+  touch-action: manipulation;
 }
 
 #name-submit-btn {
@@ -518,6 +569,7 @@ canvas {
   cursor: pointer;
   font-weight: bold;
   margin-left: 8px;
+  touch-action: manipulation;
 }
 
 #name-submit-btn:hover {
@@ -527,8 +579,10 @@ canvas {
 /* --- Responsive Design --- */
 
 #clock {
+  width: 500px;
   max-width: 90vw;
   height: auto;
+  aspect-ratio: 1 / 1;
 }
 
 @media (max-width: 768px) {
@@ -558,8 +612,8 @@ canvas {
     max-width: 90vw;
   }
 
-  #win-screen h1,
-  #lose-screen h1 {
+  #win-screen h2,
+  #lose-screen h2 {
     font-size: 40px;
   }
 

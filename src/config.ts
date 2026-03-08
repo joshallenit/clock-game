@@ -49,6 +49,8 @@ export function getTimeLimitMs(score: number): number {
 }
 
 // --- Color palette ---
+// NOTE: These values are duplicated in styles.css as CSS custom properties.
+// Canvas rendering cannot use CSS variables, so keep both in sync when changing colors.
 
 export const COLORS = {
   background: "#1a1a2e",

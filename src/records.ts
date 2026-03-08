@@ -11,18 +11,26 @@ function getTodayKey(): string {
 
 function loadRecord(): DailyRecord | null {
   const key = getTodayKey();
-  const data = localStorage.getItem(key);
-  if (!data) return null;
   try {
+    const data = localStorage.getItem(key);
+    if (!data) return null;
     return JSON.parse(data) as DailyRecord;
   } catch {
-    localStorage.removeItem(key);
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // Storage unavailable
+    }
     return null;
   }
 }
 
 function saveRecord(ms: number, name: string): void {
-  localStorage.setItem(getTodayKey(), JSON.stringify({ time: ms, name }));
+  try {
+    localStorage.setItem(getTodayKey(), JSON.stringify({ time: ms, name }));
+  } catch {
+    // Storage full or unavailable (e.g. private browsing) — silently ignore
+  }
 }
 
 export function isNewRecord(finishMs: number): boolean {
@@ -44,13 +52,13 @@ export function updateRecordBanner(): void {
 export function promptForName(finishMs: number): void {
   dom.newRecordTime.textContent = formatElapsed(finishMs);
   dom.nameInput.value = "";
-  dom.nameModal.style.display = "flex";
+  dom.nameModal.hidden = false;
   dom.nameInput.focus();
 }
 
 export function submitName(): void {
   const name = dom.nameInput.value.trim() || "Anonymous";
   saveRecord(state.elapsedMs, name);
-  dom.nameModal.style.display = "none";
+  dom.nameModal.hidden = true;
   updateRecordBanner();
 }

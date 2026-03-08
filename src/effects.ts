@@ -5,19 +5,27 @@ import type { ConfettiParticle, RainParticle } from "./types";
 const canvas = dom.confettiCanvas;
 const ctx = getContext2D(canvas);
 
-let activeAnim: number | null = null;
-let rainShakeFrames = 0;
-let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+const fxState = {
+  activeAnim: null as number | null,
+  rainShakeFrames: 0,
+  resizeTimer: null as ReturnType<typeof setTimeout> | null,
+  logicalWidth: window.innerWidth,
+  logicalHeight: window.innerHeight,
+};
 
 function resizeCanvas(): void {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  const dpr = window.devicePixelRatio || 1;
+  fxState.logicalWidth = window.innerWidth;
+  fxState.logicalHeight = window.innerHeight;
+  canvas.width = fxState.logicalWidth * dpr;
+  canvas.height = fxState.logicalHeight * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
 resizeCanvas();
 window.addEventListener("resize", () => {
-  if (resizeTimer !== null) clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(resizeCanvas, 100);
+  if (fxState.resizeTimer !== null) clearTimeout(fxState.resizeTimer);
+  fxState.resizeTimer = setTimeout(resizeCanvas, 100);
 });
 
 // --- Shared particle animation loop ---
@@ -28,11 +36,11 @@ function runParticleLoop<P>(config: {
   updateParticle: (particle: P, width: number, height: number) => boolean;
   onDone?: () => void;
 }): void {
-  if (activeAnim !== null) cancelAnimationFrame(activeAnim);
+  if (fxState.activeAnim !== null) cancelAnimationFrame(fxState.activeAnim);
 
   function step(): void {
-    const cw = canvas.width;
-    const ch = canvas.height;
+    const cw = fxState.logicalWidth;
+    const ch = fxState.logicalHeight;
     ctx.clearRect(0, 0, cw, ch);
 
     config.beforeDraw?.(config.particles, cw, ch);
@@ -43,10 +51,10 @@ function runParticleLoop<P>(config: {
     }
 
     if (alive) {
-      activeAnim = requestAnimationFrame(step);
+      fxState.activeAnim = requestAnimationFrame(step);
     } else {
       ctx.clearRect(0, 0, cw, ch);
-      activeAnim = null;
+      fxState.activeAnim = null;
       config.onDone?.();
     }
   }
@@ -59,8 +67,8 @@ function runParticleLoop<P>(config: {
 export function launchConfetti(): void {
   if (prefersReducedMotion()) return;
 
-  const cx = canvas.width / 2;
-  const cy = canvas.height / 2;
+  const cx = fxState.logicalWidth / 2;
+  const cy = fxState.logicalHeight / 2;
 
   const particles: ConfettiParticle[] = [];
   for (let i = 0; i < ANIM.confettiCount; i++) {
@@ -110,8 +118,8 @@ export function launchRain(): void {
 
   resizeCanvas();
 
-  const cw = canvas.width;
-  const ch = canvas.height;
+  const cw = fxState.logicalWidth;
+  const ch = fxState.logicalHeight;
 
   const particles: RainParticle[] = [];
   for (let i = 0; i < ANIM.rainCount; i++) {
@@ -125,14 +133,14 @@ export function launchRain(): void {
     });
   }
 
-  rainShakeFrames = ANIM.rainShakeFrames;
+  fxState.rainShakeFrames = ANIM.rainShakeFrames;
 
   runParticleLoop({
     particles,
     beforeDraw(parts, canvasW, canvasH) {
       // Screen shake
-      if (rainShakeFrames > 0) {
-        rainShakeFrames--;
+      if (fxState.rainShakeFrames > 0) {
+        fxState.rainShakeFrames--;
         const shakeX = (Math.random() - 0.5) * 12;
         const shakeY = (Math.random() - 0.5) * 12;
         canvas.style.transform = `translate(${shakeX}px,${shakeY}px)`;

@@ -8,7 +8,7 @@ import { initGame } from "./game";
 const FOCUSABLE_IN_MODAL = "#name-input, #name-submit-btn";
 
 function trapFocusInModal(e: KeyboardEvent): void {
-  if (dom.nameModal.style.display !== "flex") return;
+  if (dom.nameModal.hidden) return;
 
   if (e.key === "Escape") {
     submitName();

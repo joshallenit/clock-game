@@ -1,7 +1,17 @@
 import { CLOCK, RULES, COLORS, dom, state } from "./config";
-import { getContext2D } from "./utils";
+import { getContext2D, formatTime } from "./utils";
 
 const ctx = getContext2D(dom.clock);
+
+// HiDPI canvas support — scale backing store for crisp rendering on Retina displays
+const dpr = window.devicePixelRatio || 1;
+dom.clock.width = CLOCK.size * dpr;
+dom.clock.height = CLOCK.size * dpr;
+ctx.scale(dpr, dpr);
+
+export function updateClockAriaLabel(h: number, m: number): void {
+  dom.clock.setAttribute("aria-label", `Analog clock showing ${formatTime(h, m)}`);
+}
 
 export function drawHand(angle: number, length: number, width: number, color: string): void {
   ctx.beginPath();

@@ -1,20 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Doggy and The Clocky - a fun clock-reading game for kids. Learn to tell time with an analog clock!">
+  <meta name="theme-color" content="#1a1a2e">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <title>Clock Game</title>
 </head>
 <body>
-  <h1 id="game-title">Doggy and The Clocky</h1>
-  <div id="timer-group">
-    <div id="elapsed">0:00.0</div>
-    <div id="record-banner"></div>
-  </div>
+  <a href="#game-area" class="skip-link">Skip to game</a>
+
+  <header>
+    <h1 id="game-title">Doggy and The Clocky</h1>
+    <div id="timer-group">
+      <div id="elapsed">0:00.0</div>
+      <div id="record-banner"></div>
+    </div>
+  </header>
 
   <!-- New Record Name Modal -->
-  <div id="name-modal" role="dialog" aria-modal="true" aria-labelledby="name-modal-title">
+  <div id="name-modal" hidden role="dialog" aria-modal="true" aria-labelledby="name-modal-title">
     <div class="modal-box">
       <h2 id="name-modal-title">New Record!</h2>
       <div class="record-time" id="new-record-time"></div>
@@ -28,17 +34,17 @@
   </div>
 
   <!-- Effects Overlay -->
-  <canvas id="confetti-canvas" width="1000" height="1000" aria-hidden="true"></canvas>
+  <canvas id="confetti-canvas" aria-hidden="true"></canvas>
 
   <!-- Game Area -->
   <main id="game-area">
     <div id="game-layout">
       <div id="left-panel">
-        <div id="timer">1:00</div>
+        <div id="timer" role="timer">1:00</div>
         <div id="score">Score: 0/10</div>
         <div id="mistakes"></div>
       </div>
-      <canvas id="clock" width="500" height="500" role="img" aria-label="Analog clock showing the time to guess"></canvas>
+      <canvas id="clock" role="img" aria-label="Analog clock showing the time to guess"></canvas>
       <div id="right-panel">
         <div id="options-panel"></div>
         <div id="input-row">
@@ -52,26 +58,26 @@
   </main>
 
   <!-- Win Screen -->
-  <section id="win-screen">
-    <h1>You've Won!</h1>
+  <section id="win-screen" hidden>
+    <h2>You've Won!</h2>
     <div class="prize-box">
       <div class="book-icon">📖</div>
-      <h2>Congratulations!</h2>
+      <h3>Congratulations!</h3>
       <p>You scored 10 points and proved you're a true clock master!</p>
       <p>Your prize:</p>
       <div class="book-title">"About Time: A History of Civilization in Twelve Clocks"</div>
       <p>by David Rooney</p>
-      <p style="margin-top: 16px; font-size: 14px; color: #888;">A fascinating journey through history told through the clocks that shaped our world.</p>
+      <p class="book-description">A fascinating journey through history told through the clocks that shaped our world.</p>
     </div>
     <button id="play-again-btn">Play Again</button>
   </section>
 
   <!-- Lose Screen -->
-  <section id="lose-screen">
-    <h1>Game Over</h1>
+  <section id="lose-screen" hidden>
+    <h2>Game Over</h2>
     <div class="lose-box">
       <div class="lose-icon">💔</div>
-      <h2>Better Luck Next Time</h2>
+      <h3>Better Luck Next Time</h3>
       <p>You ran out of lives!</p>
       <div class="final-score">Final Score: <span id="final-score-value">0</span></div>
       <p>Keep practicing and you'll master the clock in no time.</p>

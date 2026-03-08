@@ -106,8 +106,8 @@ function drawHappyDog(
 }
 
 function launchDogHorizontal(facingRight: boolean, onComplete?: () => void): void {
-  const screenW = fxCanvas.width;
-  const screenH = fxCanvas.height;
+  const screenW = window.innerWidth;
+  const screenH = window.innerHeight;
   const startX = facingRight ? -100 : screenW + 100;
   const endX = facingRight ? screenW + 100 : -100;
   const groundY = screenH * 0.55;
@@ -239,8 +239,8 @@ function drawFrontDog(c: CanvasRenderingContext2D, cx: number, cy: number, legPh
 }
 
 export function launchDogApproach(onComplete?: () => void): void {
-  const screenW = fxCanvas.width;
-  const screenH = fxCanvas.height;
+  const screenW = window.innerWidth;
+  const screenH = window.innerHeight;
   const startScale = 0.3;
   const endScale = 5;
   const startY = screenH * 0.45;

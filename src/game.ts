@@ -1,6 +1,6 @@
 import { RULES, CLOCK, COLORS, ANIM, dom, state } from "./config";
 import { formatTime } from "./utils";
-import { drawClockFace, drawHand, drawCenterDot } from "./clock";
+import { drawClockFace, drawHand, drawCenterDot, updateClockAriaLabel } from "./clock";
 import { generateOptions } from "./options";
 import { launchConfetti, launchRain } from "./effects";
 import { launchDog, launchDogReverse, launchDogApproach, launchSadDog } from "./dog";
@@ -12,7 +12,7 @@ import { updateElapsedDisplay, stopElapsedTimer, startRoundTimer, stopRoundTimer
 
 function updateMistakesDisplay(): void {
   const remaining = RULES.maxMistakes - state.mistakes;
-  dom.mistakes.innerHTML = "\u2764\uFE0F".repeat(remaining) + "\uD83D\uDDA4".repeat(state.mistakes);
+  dom.mistakes.textContent = "\u2764\uFE0F".repeat(remaining) + "\uD83D\uDDA4".repeat(state.mistakes);
 }
 
 // --- Current round's correct answer ---
@@ -115,6 +115,7 @@ function spinHandsToTarget(onComplete: () => void): void {
       spinAnim = requestAnimationFrame(animate);
     } else {
       spinAnim = null;
+      updateClockAriaLabel(state.targetHours, state.targetMinutes);
       onComplete();
     }
   }
@@ -262,8 +263,8 @@ function checkAnswer(): void {
 
 function showWinScreen(): void {
   stopElapsedTimer();
-  dom.gameArea.style.display = "none";
-  dom.winScreen.style.display = "flex";
+  dom.gameArea.hidden = true;
+  dom.winScreen.hidden = false;
   launchConfetti();
   playCorrectSound();
   dom.playAgainBtn.focus();
@@ -283,9 +284,9 @@ function showWinScreen(): void {
 
 function showLoseScreen(): void {
   stopElapsedTimer();
-  dom.gameArea.style.display = "none";
+  dom.gameArea.hidden = true;
   dom.finalScoreValue.textContent = String(state.score);
-  dom.loseScreen.style.display = "flex";
+  dom.loseScreen.hidden = false;
   playGameOverSound();
   launchRain();
   dom.tryAgainBtn.focus();
@@ -310,9 +311,9 @@ function resetGame(): void {
   updateMistakesDisplay();
   dom.feedback.textContent = "";
   dom.feedback.className = "";
-  dom.winScreen.style.display = "none";
-  dom.loseScreen.style.display = "none";
-  dom.gameArea.style.display = "";
+  dom.winScreen.hidden = true;
+  dom.loseScreen.hidden = true;
+  dom.gameArea.hidden = false;
   dom.answer.value = "";
   spinToNextRound();
 }
