@@ -1,6 +1,6 @@
-import { RULES, CLOCK, COLORS, ANIM, dom, state } from "./config";
+import { RULES, CLOCK, COLORS, ANIM, dom, state, onColorSchemeChange } from "./config";
 import { formatTime } from "./utils";
-import { drawClockFace, drawHand, drawCenterDot, updateClockAriaLabel } from "./clock";
+import { drawClockFace, drawHand, drawCenterDot, drawClockAt, updateClockAriaLabel } from "./clock";
 import { generateOptions } from "./options";
 import { launchConfetti, launchRain } from "./effects";
 import { launchDog, launchDogReverse, launchDogApproach, launchSadDog } from "./dog";
@@ -330,6 +330,13 @@ export function initGame(): void {
   });
   dom.playAgainBtn.addEventListener("click", resetGame);
   dom.tryAgainBtn.addEventListener("click", resetGame);
+
+  // Redraw the clock when the OS color scheme changes mid-game
+  onColorSchemeChange(() => {
+    if (state.targetHours > 0) {
+      drawClockAt(state.targetHours, state.targetMinutes);
+    }
+  });
 
   spinToNextRound();
 }
