@@ -7,6 +7,15 @@ import { playCorrectSound, playGameOverSound } from "./audio";
 import { isNewRecord, promptForName } from "./records";
 import { stopElapsedTimer } from "./timer";
 
+let screenInterval: ReturnType<typeof setInterval> | null = null;
+
+export function stopScreenEffects(): void {
+  if (screenInterval !== null) {
+    clearInterval(screenInterval);
+    screenInterval = null;
+  }
+}
+
 export function showWinScreen(): void {
   stopElapsedTimer();
   dom.gameArea.hidden = true;
@@ -16,11 +25,12 @@ export function showWinScreen(): void {
   dom.playAgainBtn.focus();
 
   let bursts = 0;
-  const interval = setInterval(() => {
+  stopScreenEffects();
+  screenInterval = setInterval(() => {
     bursts++;
     launchConfetti();
     if (bursts >= ANIM.winConfettiBursts) {
-      clearInterval(interval);
+      stopScreenEffects();
       if (isNewRecord(state.elapsedMs)) {
         promptForName(state.elapsedMs);
       }
@@ -38,9 +48,10 @@ export function showLoseScreen(): void {
   dom.tryAgainBtn.focus();
 
   let waves = 0;
-  const interval = setInterval(() => {
+  stopScreenEffects();
+  screenInterval = setInterval(() => {
     waves++;
     launchRain();
-    if (waves >= ANIM.loseRainWaves) clearInterval(interval);
+    if (waves >= ANIM.loseRainWaves) stopScreenEffects();
   }, ANIM.losRainIntervalMs);
 }

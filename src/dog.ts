@@ -16,6 +16,15 @@ const S = 1.2; // sprite scale factor
 const dogAnim: AnimRef = { id: null };
 const sadDogAnim: AnimRef = { id: null };
 
+export function stopDogAnimations(): void {
+  for (const ref of [dogAnim, sadDogAnim]) {
+    if (ref.id !== null) {
+      cancelAnimationFrame(ref.id);
+      ref.id = null;
+    }
+  }
+}
+
 // --- Shared animation loop ---
 
 function runAnimation(

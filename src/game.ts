@@ -11,7 +11,8 @@ import { launchDog, launchDogReverse, launchDogApproach, launchSadDog } from "./
 import { playCorrectSound, playIncorrectSound, playWhineSound, ensureAudioContext } from "./audio";
 import { updateRecordBanner } from "./records";
 import { updateElapsedDisplay, stopElapsedTimer, startRoundTimer, stopRoundTimer } from "./timer";
-import { showWinScreen, showLoseScreen } from "./screens";
+import { showWinScreen, showLoseScreen, stopScreenEffects } from "./screens";
+import { stopDogAnimations } from "./dog";
 
 const HEART = "❤️";
 const BLACK_HEART = "🖤";
@@ -223,6 +224,13 @@ function checkAnswer(): void {
 // --- Reset ---
 
 function resetGame(): void {
+  stopRoundTimer();
+  stopScreenEffects();
+  stopDogAnimations();
+  if (state.spinAnimId !== null) {
+    cancelAnimationFrame(state.spinAnimId);
+    state.spinAnimId = null;
+  }
   state.score = 0;
   state.mistakes = 0;
   state.elapsedMs = 0;
