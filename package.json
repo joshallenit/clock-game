@@ -29,6 +29,7 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
+    "@upstash/redis": "^1.36.3",
     "express": "^5.2.1"
   }
 }
