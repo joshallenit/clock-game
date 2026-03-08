@@ -79,6 +79,9 @@ export const COLORS: ColorPalette = new Proxy({} as ColorPalette, {
   get(_, prop) {
     return activePalette[prop as keyof ColorPalette];
   },
+  has(_, prop) {
+    return prop in activePalette;
+  },
 });
 
 /** Current confetti color list. Always reflects the active color scheme. */

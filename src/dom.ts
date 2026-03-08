@@ -6,16 +6,23 @@ function getEl<T extends HTMLElement>(id: string): T {
   return el as T;
 }
 
+let initialized = false;
+
 /** DOM refs are populated by initDom(). Accessing before init throws at the call site. */
 export const dom: DomRefs = new Proxy({} as DomRefs, {
   get(target, prop, receiver) {
     if (prop in target) return Reflect.get(target, prop, receiver);
     throw new Error(`DOM not initialized: accessed dom.${String(prop)} before initDom()`);
   },
+  set(target, prop, value, receiver) {
+    if (!initialized) throw new Error(`DOM not initialized: cannot set dom.${String(prop)} before initDom()`);
+    return Reflect.set(target, prop, value, receiver);
+  },
 });
 
 /** Populate all DOM refs. Must be called once after DOMContentLoaded. */
 export function initDom(): void {
+  initialized = true;
   Object.assign(dom, {
     clock: getEl<HTMLCanvasElement>("clock"),
     confettiCanvas: getEl<HTMLCanvasElement>("confetti-canvas"),
