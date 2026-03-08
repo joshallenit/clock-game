@@ -114,6 +114,7 @@ export function drawClockAt(h: number, m: number): void {
     COLORS.accent,
   );
   drawCenterDot();
+  updateClockAriaLabel(h, m);
 }
 
 /** Spin clock hands from random angles to the target time, then call onComplete. */

@@ -32,7 +32,7 @@ Shared by many:
   types.ts         All TypeScript interfaces
   constants.ts     Immutable config: clock geometry, game rules, animation settings
   colors.ts        Dark/light palette, runtime theme switching
-  utils.ts         Pure helpers: formatTime, formatElapsed, escapeHtml, etc.
+  utils.ts         Pure helpers: formatTime, formatElapsed, etc.
 ```
 
 ## Key patterns

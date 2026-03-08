@@ -1,7 +1,7 @@
 // Daily speed records via localStorage. Tracks best completion time per day.
 import { dom } from "./dom";
 import { state } from "./state";
-import { formatElapsed, escapeHtml } from "./utils";
+import { formatElapsed } from "./utils";
 import type { DailyRecord } from "./types";
 
 function getTodayKey(): string {
@@ -42,14 +42,36 @@ export function isNewRecord(finishMs: number): boolean {
 
 export function updateRecordBanner(): void {
   const record = loadRecord();
+  dom.recordBanner.textContent = "";
   if (record) {
-    dom.recordBanner.innerHTML =
-      `<span class="record-name">${escapeHtml(record.name)}</span>` +
-      `<br>Today's Record: ${formatElapsed(record.time)}`;
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "record-name";
+    nameSpan.textContent = record.name;
+    dom.recordBanner.appendChild(nameSpan);
+    dom.recordBanner.appendChild(document.createElement("br"));
+    dom.recordBanner.appendChild(
+      document.createTextNode(`Today's Record: ${formatElapsed(record.time)}`),
+    );
   } else {
     dom.recordBanner.textContent = "No record today yet!";
   }
 }
+
+function cleanupOldRecords(): void {
+  const todayKey = getTodayKey();
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key?.startsWith("clockRecord_") && key !== todayKey) {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch {
+    // Storage unavailable
+  }
+}
+
+cleanupOldRecords();
 
 export function promptForName(finishMs: number): void {
   dom.newRecordTime.textContent = formatElapsed(finishMs);

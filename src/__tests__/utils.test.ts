@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatTime, formatElapsed, escapeHtml } from "../utils";
+import { formatTime, formatElapsed } from "../utils";
 
 describe("formatTime", () => {
   it("formats hour and zero minutes", () => {
@@ -42,19 +42,5 @@ describe("formatElapsed", () => {
 
   it("truncates sub-100ms digits", () => {
     expect(formatElapsed(1050)).toBe("0:01.0");
-  });
-});
-
-describe("escapeHtml", () => {
-  it("escapes angle brackets", () => {
-    expect(escapeHtml("<script>alert('xss')</script>")).not.toContain("<script>");
-  });
-
-  it("escapes ampersand", () => {
-    expect(escapeHtml("a & b")).toBe("a &amp; b");
-  });
-
-  it("passes through safe strings", () => {
-    expect(escapeHtml("hello world")).toBe("hello world");
   });
 });

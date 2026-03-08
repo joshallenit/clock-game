@@ -41,24 +41,73 @@ function updateTimerDisplay(): void {
   }
 }
 
+let roundTimeoutId: ReturnType<typeof setTimeout> | null = null;
+let activeTimeoutCallback: (() => void) | null = null;
+
+function clearRoundTimeout(): void {
+  if (roundTimeoutId !== null) {
+    clearTimeout(roundTimeoutId);
+    roundTimeoutId = null;
+  }
+  activeTimeoutCallback = null;
+}
+
+// When the tab becomes visible again, re-sync the authoritative timeout
+// so it fires at the correct wall-clock time (browsers throttle setInterval
+// and setTimeout in background tabs, which could delay the timeout).
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden || !activeTimeoutCallback) return;
+
+  const elapsed = Date.now() - state.roundStart;
+  state.remainingMs = Math.max(0, state.roundDuration - elapsed);
+
+  if (state.remainingMs <= 0) {
+    clearRoundTimeout();
+    const cb = activeTimeoutCallback;
+    activeTimeoutCallback = null;
+    cb();
+  } else {
+    if (roundTimeoutId !== null) clearTimeout(roundTimeoutId);
+    const cb = activeTimeoutCallback;
+    roundTimeoutId = setTimeout(() => {
+      roundTimeoutId = null;
+      activeTimeoutCallback = null;
+      if (state.timerInterval) clearInterval(state.timerInterval);
+      cb();
+      updateTimerDisplay();
+    }, state.remainingMs);
+  }
+  updateTimerDisplay();
+});
+
 export function startRoundTimer(onTimeout: () => void): void {
   if (state.timerInterval) clearInterval(state.timerInterval);
+  clearRoundTimeout();
   state.roundDuration = getTimeLimitMs(state.score);
   state.remainingMs = state.roundDuration;
   state.roundStart = Date.now();
+  activeTimeoutCallback = onTimeout;
   updateTimerDisplay();
   startElapsedTimer();
+
+  // Authoritative timeout — fires at the correct time even if setInterval drifts
+  roundTimeoutId = setTimeout(() => {
+    roundTimeoutId = null;
+    activeTimeoutCallback = null;
+    if (state.timerInterval) clearInterval(state.timerInterval);
+    onTimeout();
+    updateTimerDisplay();
+  }, state.roundDuration);
+
+  // Display-only interval for updating the countdown UI
   state.timerInterval = setInterval(() => {
     const elapsed = Date.now() - state.roundStart;
     state.remainingMs = Math.max(0, state.roundDuration - elapsed);
-    if (state.remainingMs <= 0) {
-      if (state.timerInterval) clearInterval(state.timerInterval);
-      onTimeout();
-    }
     updateTimerDisplay();
   }, 100);
 }
 
 export function stopRoundTimer(): void {
   if (state.timerInterval) clearInterval(state.timerInterval);
+  clearRoundTimeout();
 }

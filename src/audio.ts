@@ -21,6 +21,11 @@ function getAudioContext(): AudioContext | null {
   return audioCtx;
 }
 
+/** Warm up the AudioContext from a user gesture so iOS Safari allows playback. */
+export function ensureAudioContext(): void {
+  getAudioContext();
+}
+
 function playTone(
   ctx: AudioContext,
   freq: number,

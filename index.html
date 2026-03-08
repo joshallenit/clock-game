@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Doggy and The Clocky - a fun clock-reading game for kids. Learn to tell time with an analog clock!">
   <meta name="theme-color" content="#1a1a2e">
+  <meta name="color-scheme" content="dark light">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
   <title>Clock Game</title>
 </head>
 <body>
@@ -49,7 +52,7 @@
         <div id="options-panel"></div>
         <div id="input-row">
           <label for="answer" class="sr-only">Enter time as H:MM</label>
-          <input type="text" id="answer" placeholder="7:30">
+          <input type="text" id="answer" placeholder="7:30" inputmode="text" pattern="\d{1,2}:\d{2}">
           <button id="submit-btn">Submit</button>
         </div>
       </div>
@@ -58,7 +61,7 @@
   </main>
 
   <!-- Win Screen -->
-  <section id="win-screen" hidden>
+  <section id="win-screen" hidden role="alert">
     <h2>You've Won!</h2>
     <div class="prize-box">
       <div class="book-icon">📖</div>
@@ -73,7 +76,7 @@
   </section>
 
   <!-- Lose Screen -->
-  <section id="lose-screen" hidden>
+  <section id="lose-screen" hidden role="alert">
     <h2>Game Over</h2>
     <div class="lose-box">
       <div class="lose-icon">💔</div>

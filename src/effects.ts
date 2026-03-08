@@ -107,8 +107,6 @@ export function launchConfetti(): void {
       ctx.globalAlpha = Math.max(0, p.life);
       ctx.fillStyle = p.color;
       ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
-      ctx.shadowColor = p.color;
-      ctx.shadowBlur = 8;
       ctx.restore();
       return true;
     },
@@ -174,8 +172,6 @@ export function launchRain(): void {
       ctx.strokeStyle = COLORS.rain;
       ctx.lineWidth = 3;
       ctx.lineCap = "round";
-      ctx.shadowColor = COLORS.rain;
-      ctx.shadowBlur = 6;
       ctx.beginPath();
       ctx.moveTo(p.x, p.y);
       ctx.lineTo(p.x + 2, p.y + p.length);

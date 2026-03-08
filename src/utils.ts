@@ -10,12 +10,6 @@ export function formatElapsed(ms: number): string {
   return mins + ":" + String(secs).padStart(2, "0") + "." + tenths;
 }
 
-export function escapeHtml(str: string): string {
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
-}
-
 export function getContext2D(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
   const ctx = canvas.getContext("2d");
   if (!ctx) {

@@ -1,0 +1,16 @@
+{
+  "name": "Doggy and The Clocky",
+  "short_name": "Clock Game",
+  "description": "A fun clock-reading game for kids. Learn to tell time with an analog clock!",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

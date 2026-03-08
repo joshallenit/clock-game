@@ -38,7 +38,7 @@ src/
   options.ts            Multiple-choice answer generation (correct, swapped, nearby times)
   audio.ts              Web Audio API sound effects (correct, incorrect, whine, game over)
   records.ts            Daily record tracking via localStorage
-  utils.ts              formatTime, formatElapsed, escapeHtml helpers
+  utils.ts              formatTime, formatElapsed helpers
   styles.css            All styles (imported via main.ts, processed by Vite)
 ```
 

@@ -8,7 +8,7 @@ import { drawClockAt, animateToTime } from "./clock";
 import { generateOptions } from "./options";
 import { launchConfetti, launchRain } from "./effects";
 import { launchDog, launchDogReverse, launchDogApproach, launchSadDog } from "./dog";
-import { playCorrectSound, playIncorrectSound, playWhineSound } from "./audio";
+import { playCorrectSound, playIncorrectSound, playWhineSound, ensureAudioContext } from "./audio";
 import { updateRecordBanner } from "./records";
 import { updateElapsedDisplay, stopElapsedTimer, startRoundTimer, stopRoundTimer } from "./timer";
 import { showWinScreen, showLoseScreen } from "./screens";
@@ -38,6 +38,7 @@ function renderOptions(): void {
   state.correctLabel = formatTime(state.targetHours, state.targetMinutes);
 
   const hintBtn = document.createElement("button");
+  hintBtn.type = "button";
   hintBtn.className = "option-btn hint-btn";
   hintBtn.textContent = "Hint...";
   hintBtn.addEventListener("click", () => {
@@ -47,6 +48,7 @@ function renderOptions(): void {
     hintBtn.remove();
     options.forEach((opt, i) => {
       const btn = document.createElement("button");
+      btn.type = "button";
       btn.className = "option-btn reveal";
       btn.style.animationDelay = i * 0.06 + "s";
       btn.textContent = opt.label;
@@ -234,6 +236,10 @@ function resetGame(): void {
 export function initGame(): void {
   updateRecordBanner();
   updateMistakesDisplay();
+
+  // Warm up AudioContext on first user interaction (required by iOS Safari)
+  document.addEventListener("click", ensureAudioContext, { once: true });
+  document.addEventListener("keydown", ensureAudioContext, { once: true });
 
   dom.submitBtn.addEventListener("click", checkAnswer);
   dom.answer.addEventListener("keydown", (e) => {
