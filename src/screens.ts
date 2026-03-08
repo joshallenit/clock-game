@@ -7,10 +7,8 @@ import { playCorrectSound, playGameOverSound } from "./audio";
 import { isNewRecord, promptForName } from "./records";
 import { stopElapsedTimer } from "./timer";
 
-import type { IntervalId } from "./types";
-
 // Rendering-only interval (not in state.ts because it's purely visual/internal)
-let screenInterval: IntervalId = null;
+let screenInterval: ReturnType<typeof setInterval> | null = null;
 
 export function stopScreenEffects(): void {
   if (screenInterval !== null) {

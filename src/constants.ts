@@ -11,6 +11,16 @@ export const CLOCK = {
   hourHand: { lengthRatio: 0.5, width: 6 },
   minuteHand: { lengthRatio: 0.7, width: 4 },
   centerDotRadius: 6,
+  borderWidth: 4,
+  hourTickWidth: 3,
+  minuteTickWidth: 1,
+  numberFont: "bold 24px sans-serif",
+} as const;
+
+// --- Dog sprite rendering ---
+
+export const DOG = {
+  scale: 1.2,
 } as const;
 
 // --- Game rules and difficulty ---

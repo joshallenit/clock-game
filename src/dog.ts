@@ -1,15 +1,16 @@
 // Dog sprite drawing + animations: run left/right, approach camera, sad sit on clock.
-import { CLOCK, ANIM } from "./constants";
+import { CLOCK, ANIM, DOG } from "./constants";
 import { COLORS } from "./colors";
 import { dom } from "./dom";
 import { getContext2D } from "./utils";
+import { runFrameLoop } from "./animation";
 import type { AnimRef } from "./types";
 
 const clockCtx = getContext2D(dom.clock);
 const fxCanvas = dom.confettiCanvas;
 const fxCtx = getContext2D(fxCanvas);
 
-const S = 1.2; // sprite scale factor
+const S = DOG.scale;
 
 // Rendering-only animation refs (not in state.ts because they don't affect game logic)
 const dogAnim: AnimRef = { id: null };
@@ -22,32 +23,6 @@ export function stopDogAnimations(): void {
       ref.id = null;
     }
   }
-}
-
-// --- Shared animation loop ---
-
-function runAnimation(
-  totalFrames: number,
-  ref: AnimRef,
-  drawFrame: (frame: number, progress: number) => void,
-  onComplete?: () => void,
-): void {
-  if (ref.id !== null) cancelAnimationFrame(ref.id);
-  let frame = 0;
-
-  function step(): void {
-    frame++;
-    drawFrame(frame, frame / totalFrames);
-
-    if (frame < totalFrames) {
-      ref.id = requestAnimationFrame(step);
-    } else {
-      ref.id = null;
-      onComplete?.();
-    }
-  }
-
-  step();
 }
 
 // --- Happy dog (side view, runs across screen) ---
@@ -135,7 +110,7 @@ function launchDogHorizontal(
 
   repaintClock();
 
-  runAnimation(
+  runFrameLoop(
     ANIM.dogRunFrames,
     dogAnim,
     (_frame, t) => {
@@ -232,7 +207,7 @@ function drawFrontDogHead(c: CanvasRenderingContext2D): void {
   }
 
   // Eye shine
-  c.fillStyle = "#fff";
+  c.fillStyle = COLORS.eyeShine;
   c.beginPath();
   c.arc(-5.5 * S, -25.5 * S, 1.2 * S, 0, Math.PI * 2);
   c.fill();
@@ -275,7 +250,7 @@ export function launchDogApproach(repaintClock: () => void, onComplete?: () => v
 
   repaintClock();
 
-  runAnimation(
+  runFrameLoop(
     ANIM.dogApproachFrames,
     dogAnim,
     (_frame, t) => {
@@ -392,7 +367,7 @@ function drawSadDog(c: CanvasRenderingContext2D, cx: number, cy: number, headBob
 }
 
 export function launchSadDog(repaintClock: () => void, onComplete?: () => void): void {
-  runAnimation(
+  runFrameLoop(
     ANIM.sadDogFrames,
     sadDogAnim,
     (frame) => {

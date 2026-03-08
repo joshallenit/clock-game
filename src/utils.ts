@@ -18,10 +18,25 @@ export function getContext2D(canvas: HTMLCanvasElement): CanvasRenderingContext2
   return ctx;
 }
 
+/** Set up a canvas for crisp rendering on HiDPI/Retina displays. Returns the 2D context. */
+export function setupHiDPICanvas(
+  canvas: HTMLCanvasElement,
+  logicalWidth: number,
+  logicalHeight: number,
+): CanvasRenderingContext2D {
+  const ctx = getContext2D(canvas);
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = logicalWidth * dpr;
+  canvas.height = logicalHeight * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
 export function prefersReducedMotion(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+/** Returns a random integer in [min, max) — min inclusive, max exclusive. */
 export function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min)) + min;
 }

@@ -13,21 +13,8 @@ import { playCorrectSound, playIncorrectSound, playWhineSound, ensureAudioContex
 import { updateRecordBanner } from "./records";
 import { updateElapsedDisplay, stopElapsedTimer, startRoundTimer, stopRoundTimer, setupTimerListeners } from "./timer";
 import { showWinScreen, showLoseScreen, stopScreenEffects } from "./screens";
-
-const HEART = "❤️";
-const BLACK_HEART = "🖤";
-const CHECK = "✔";
-const CROSS = "✘";
-
-function updateMistakesDisplay(): void {
-  const remaining = RULES.maxMistakes - state.mistakes;
-  dom.mistakes.textContent = HEART.repeat(remaining) + BLACK_HEART.repeat(state.mistakes);
-}
-
-function setFeedback(text: string, className: string): void {
-  dom.feedback.textContent = text;
-  dom.feedback.className = className;
-}
+import { setFeedback, updateMistakesDisplay, CHECK, CROSS } from "./feedback";
+import { parseTimeInput } from "./input";
 
 // --- Options panel ---
 
@@ -199,15 +186,6 @@ function handleOptionClick(label: string, btn: HTMLButtonElement): void {
 }
 
 // --- Text input answer ---
-
-function parseTimeInput(raw: string): { h: number; m: number } | null {
-  const match = raw.match(/^(\d{1,2}):(\d{2})$/);
-  if (!match) return null;
-  const h = parseInt(match[1], 10);
-  const m = parseInt(match[2], 10);
-  if (h < 1 || h > 12 || m < 0 || m > 59) return null;
-  return { h, m };
-}
 
 function checkAnswer(): void {
   if (state.transitioning) return;

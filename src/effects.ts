@@ -2,11 +2,11 @@
 import { ANIM } from "./constants";
 import { CONFETTI_COLORS, COLORS } from "./colors";
 import { dom } from "./dom";
-import { getContext2D, prefersReducedMotion, randomChoice } from "./utils";
+import { setupHiDPICanvas, prefersReducedMotion, randomChoice } from "./utils";
 import type { ConfettiParticle, RainParticle, TimeoutId } from "./types";
 
 const canvas = dom.confettiCanvas;
-const ctx = getContext2D(canvas);
+let ctx = setupHiDPICanvas(canvas, window.innerWidth, window.innerHeight);
 
 // Module-private rendering state (not in state.ts because it's purely visual/internal)
 const fxState = {
@@ -18,15 +18,11 @@ const fxState = {
 };
 
 function resizeCanvas(): void {
-  const dpr = window.devicePixelRatio || 1;
   fxState.logicalWidth = window.innerWidth;
   fxState.logicalHeight = window.innerHeight;
-  canvas.width = fxState.logicalWidth * dpr;
-  canvas.height = fxState.logicalHeight * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx = setupHiDPICanvas(canvas, fxState.logicalWidth, fxState.logicalHeight);
 }
 
-resizeCanvas();
 window.addEventListener("resize", () => {
   if (fxState.resizeTimer !== null) clearTimeout(fxState.resizeTimer);
   fxState.resizeTimer = setTimeout(resizeCanvas, 100);
@@ -155,7 +151,7 @@ export function launchRain(): void {
       for (const q of parts) {
         if (q.life > 0) maxLife = Math.max(maxLife, q.life);
       }
-      ctx.fillStyle = `rgba(10, 10, 30, ${0.4 * Math.min(1, maxLife)})`;
+      ctx.fillStyle = `rgba(${COLORS.rainOverlay}, ${0.4 * Math.min(1, maxLife)})`;
       ctx.fillRect(0, 0, canvasW, canvasH);
     },
     updateParticle(p, _canvasW, canvasH) {

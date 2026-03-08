@@ -3,16 +3,19 @@ import { CLOCK, ANIM } from "./constants";
 import { COLORS } from "./colors";
 import { dom } from "./dom";
 import { state } from "./state";
-import { getContext2D, formatTime } from "./utils";
+import { setupHiDPICanvas, formatTime } from "./utils";
 import { shouldShowHourNumber } from "./difficulty";
+import { runFrameLoop } from "./animation";
+import type { AnimRef } from "./types";
 
-const ctx = getContext2D(dom.clock);
+const ctx = setupHiDPICanvas(dom.clock, CLOCK.size, CLOCK.size);
 
-// HiDPI canvas support -- scale backing store for crisp rendering on Retina displays
-const dpr = window.devicePixelRatio || 1;
-dom.clock.width = CLOCK.size * dpr;
-dom.clock.height = CLOCK.size * dpr;
-ctx.scale(dpr, dpr);
+// AnimRef for the spin transition (kept in state.ts for cleanup coordination)
+const spinRef: AnimRef = { id: null };
+
+function syncSpinRefToState(): void {
+  state.spinAnimId = spinRef.id;
+}
 
 function updateClockAriaLabel(h: number, m: number): void {
   dom.clock.setAttribute("aria-label", `Analog clock showing ${formatTime(h, m)}`);
@@ -28,19 +31,17 @@ function drawHand(angle: number, length: number, width: number, color: string): 
   ctx.stroke();
 }
 
-export function drawClockFace(): void {
-  ctx.clearRect(0, 0, CLOCK.size, CLOCK.size);
-
-  // Outer circle
+function drawClockCircle(): void {
   ctx.beginPath();
   ctx.arc(CLOCK.center, CLOCK.center, CLOCK.radius, 0, Math.PI * 2);
   ctx.fillStyle = COLORS.panel;
   ctx.fill();
   ctx.strokeStyle = COLORS.text;
-  ctx.lineWidth = 4;
+  ctx.lineWidth = CLOCK.borderWidth;
   ctx.stroke();
+}
 
-  // Hour tick marks
+function drawHourTicks(): void {
   const hourInner = CLOCK.radius - CLOCK.hourTickInnerInset;
   const tickOuter = CLOCK.radius - CLOCK.tickOuterInset;
   for (let i = 0; i < 12; i++) {
@@ -55,12 +56,14 @@ export function drawClockFace(): void {
       CLOCK.center + tickOuter * Math.sin(angle),
     );
     ctx.strokeStyle = COLORS.text;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = CLOCK.hourTickWidth;
     ctx.stroke();
   }
+}
 
-  // Minute tick marks
+function drawMinuteTicks(): void {
   const minuteInner = CLOCK.radius - CLOCK.minuteTickInnerInset;
+  const tickOuter = CLOCK.radius - CLOCK.tickOuterInset;
   for (let i = 0; i < 60; i++) {
     if (i % 5 === 0) continue;
     const angle = (i * Math.PI) / 30 - Math.PI / 2;
@@ -74,13 +77,14 @@ export function drawClockFace(): void {
       CLOCK.center + tickOuter * Math.sin(angle),
     );
     ctx.strokeStyle = COLORS.muted;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = CLOCK.minuteTickWidth;
     ctx.stroke();
   }
+}
 
-  // Hour numbers (hidden progressively at higher difficulty)
+function drawClockNumbers(): void {
   ctx.fillStyle = COLORS.text;
-  ctx.font = "bold 24px sans-serif";
+  ctx.font = CLOCK.numberFont;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   const numRadius = CLOCK.radius - CLOCK.numberInset;
@@ -93,6 +97,14 @@ export function drawClockFace(): void {
       CLOCK.center + numRadius * Math.sin(angle),
     );
   }
+}
+
+export function drawClockFace(): void {
+  ctx.clearRect(0, 0, CLOCK.size, CLOCK.size);
+  drawClockCircle();
+  drawHourTicks();
+  drawMinuteTicks();
+  drawClockNumbers();
 }
 
 function drawCenterDot(): void {
@@ -119,8 +131,8 @@ export function drawClockAt(h: number, m: number): void {
 
 /** Spin clock hands from random angles to the target time, then call onComplete. */
 export function animateToTime(h: number, m: number, onComplete: () => void): void {
+  // Sync any previous spinRef into state for cleanup
   if (state.spinAnimId !== null) cancelAnimationFrame(state.spinAnimId);
-  let frame = 0;
 
   const startMinAngle = Math.random() * Math.PI * 2;
   const startHourAngle = Math.random() * Math.PI * 2;
@@ -132,27 +144,28 @@ export function animateToTime(h: number, m: number, onComplete: () => void): voi
   let endHourAngle = targetHourAngle + Math.PI * 4;
   while (endHourAngle < startHourAngle) endHourAngle += Math.PI * 2;
 
-  function animate(): void {
-    frame++;
-    const t = frame / ANIM.spinFrames;
-    const ease = 1 - Math.pow(1 - t, 5);
+  runFrameLoop(
+    ANIM.spinFrames,
+    spinRef,
+    (_frame, t) => {
+      syncSpinRefToState();
+      const ease = 1 - Math.pow(1 - t, 5);
 
-    const currentMin = startMinAngle + (endMinAngle - startMinAngle) * ease;
-    const currentHour = startHourAngle + (endHourAngle - startHourAngle) * ease;
+      const currentMin = startMinAngle + (endMinAngle - startMinAngle) * ease;
+      const currentHour = startHourAngle + (endHourAngle - startHourAngle) * ease;
 
-    drawClockFace();
-    drawHand(currentHour, CLOCK.radius * CLOCK.hourHand.lengthRatio, CLOCK.hourHand.width, COLORS.text);
-    drawHand(currentMin, CLOCK.radius * CLOCK.minuteHand.lengthRatio, CLOCK.minuteHand.width, COLORS.accent);
-    drawCenterDot();
-
-    if (frame < ANIM.spinFrames) {
-      state.spinAnimId = requestAnimationFrame(animate);
-    } else {
+      drawClockFace();
+      drawHand(currentHour, CLOCK.radius * CLOCK.hourHand.lengthRatio, CLOCK.hourHand.width, COLORS.text);
+      drawHand(currentMin, CLOCK.radius * CLOCK.minuteHand.lengthRatio, CLOCK.minuteHand.width, COLORS.accent);
+      drawCenterDot();
+    },
+    () => {
+      spinRef.id = null;
       state.spinAnimId = null;
       updateClockAriaLabel(h, m);
       onComplete();
-    }
-  }
+    },
+  );
 
-  animate();
+  syncSpinRefToState();
 }

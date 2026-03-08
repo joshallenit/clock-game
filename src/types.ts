@@ -93,3 +93,9 @@ export interface AnimRef {
 /** Shorthand for timer handle types used across modules. */
 export type IntervalId = ReturnType<typeof setInterval> | null;
 export type TimeoutId = ReturnType<typeof setTimeout> | null;
+
+/** Valid CSS class names for the feedback element. */
+export type FeedbackClass = "correct" | "incorrect" | "";
+
+/** Valid CSS class names for the timer element based on remaining time. */
+export type TimerStatusClass = "critical" | "warning" | "";

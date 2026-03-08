@@ -17,6 +17,8 @@ interface ColorPalette {
   dogEye: string;
   dogNose: string;
   rain: string;
+  eyeShine: string;
+  rainOverlay: string;
 }
 
 const DARK_PALETTE: ColorPalette = {
@@ -35,6 +37,8 @@ const DARK_PALETTE: ColorPalette = {
   dogEye: "#222",
   dogNose: "#333",
   rain: "#6899cc",
+  eyeShine: "#ffffff",
+  rainOverlay: "10, 10, 30",
 };
 
 const LIGHT_PALETTE: ColorPalette = {
@@ -53,6 +57,8 @@ const LIGHT_PALETTE: ColorPalette = {
   dogEye: "#222",
   dogNose: "#333",
   rain: "#3b82f6",
+  eyeShine: "#ffffff",
+  rainOverlay: "10, 10, 30",
 };
 
 const DARK_CONFETTI = [
