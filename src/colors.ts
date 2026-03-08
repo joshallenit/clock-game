@@ -71,8 +71,20 @@ const LIGHT_CONFETTI = [
   "#ea580c", "#0891b2", "#ca8a04", "#db2777",
 ];
 
-export const COLORS: ColorPalette = { ...DARK_PALETTE };
-export const CONFETTI_COLORS: string[] = [...DARK_CONFETTI];
+let activePalette: ColorPalette = DARK_PALETTE;
+let activeConfetti: readonly string[] = DARK_CONFETTI;
+
+/** Reads from the current palette. Safe to destructure — the proxy always returns live values. */
+export const COLORS: ColorPalette = new Proxy({} as ColorPalette, {
+  get(_, prop) {
+    return activePalette[prop as keyof ColorPalette];
+  },
+});
+
+/** Current confetti color list. Always reflects the active color scheme. */
+export function getConfettiColors(): readonly string[] {
+  return activeConfetti;
+}
 
 /** Callbacks invoked when the color scheme changes (e.g. to redraw the clock). */
 const schemeChangeListeners: Array<() => void> = [];
@@ -85,12 +97,8 @@ function applyColorScheme(): void {
   const prefersLight =
     typeof window.matchMedia === "function" &&
     window.matchMedia("(prefers-color-scheme: light)").matches;
-  const palette = prefersLight ? LIGHT_PALETTE : DARK_PALETTE;
-  const confetti = prefersLight ? LIGHT_CONFETTI : DARK_CONFETTI;
-
-  Object.assign(COLORS, palette);
-  CONFETTI_COLORS.length = 0;
-  CONFETTI_COLORS.push(...confetti);
+  activePalette = prefersLight ? LIGHT_PALETTE : DARK_PALETTE;
+  activeConfetti = prefersLight ? LIGHT_CONFETTI : DARK_CONFETTI;
 
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute("content", COLORS.background);

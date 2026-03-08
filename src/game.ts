@@ -33,22 +33,15 @@ function createOptionButton(label: string, index: number): HTMLButtonElement {
 
 function revealOptions(options: ReturnType<typeof generateOptions>, hintBtn: HTMLButtonElement): void {
   state.elapsedMs += RULES.hintPenaltyMs;
-  const startHeight = dom.optionsPanel.scrollHeight;
-  dom.optionsPanel.style.maxHeight = startHeight + "px";
   hintBtn.remove();
 
   for (let i = 0; i < options.length; i++) {
     dom.optionsPanel.appendChild(createOptionButton(options[i].label, i));
   }
-
-  requestAnimationFrame(() => {
-    dom.optionsPanel.style.maxHeight = dom.optionsPanel.scrollHeight + "px";
-  });
 }
 
 function renderOptions(): void {
   dom.optionsPanel.innerHTML = "";
-  dom.optionsPanel.style.maxHeight = "";
   const options = generateOptions();
   state.correctLabel = formatTime(state.targetHours, state.targetMinutes);
 
@@ -59,9 +52,6 @@ function renderOptions(): void {
   hintBtn.addEventListener("click", () => revealOptions(options, hintBtn));
 
   dom.optionsPanel.appendChild(hintBtn);
-  requestAnimationFrame(() => {
-    dom.optionsPanel.style.maxHeight = dom.optionsPanel.scrollHeight + "px";
-  });
 }
 
 // --- Pick a new random time for the round ---

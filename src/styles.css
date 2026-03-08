@@ -185,9 +185,6 @@ canvas {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  overflow: hidden;
-  transition: max-height 0.4s ease;
-  min-height: 58px;
 }
 
 .option-btn {

@@ -8,6 +8,16 @@ import { initEffects } from "./effects";
 import { initDog } from "./dog";
 import { initGame } from "./game";
 
+// --- Global error handler ---
+
+window.addEventListener("error", (e) => {
+  console.error("Unhandled error:", e.error ?? e.message);
+});
+
+window.addEventListener("unhandledrejection", (e) => {
+  console.error("Unhandled promise rejection:", e.reason);
+});
+
 // --- Explicit module initialization (order matters) ---
 
 initDom();       // 1. Populate DOM refs (everything depends on this)

@@ -1,6 +1,6 @@
 // Confetti burst + rain particles on shared overlay canvas (#confetti-canvas).
 import { ANIM } from "./constants";
-import { CONFETTI_COLORS, COLORS } from "./colors";
+import { getConfettiColors, COLORS } from "./colors";
 import { dom } from "./dom";
 import { setupHiDPICanvas, prefersReducedMotion, randomChoice } from "./utils";
 import type { ConfettiParticle, RainParticle, TimeoutId } from "./types";
@@ -109,7 +109,7 @@ export function launchConfetti(): void {
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed - 8,
       size: Math.random() * 12 + 6,
-      color: randomChoice(CONFETTI_COLORS),
+      color: randomChoice(getConfettiColors()),
       rotation: Math.random() * Math.PI * 2,
       rotationSpeed: (Math.random() - 0.5) * 0.4,
       life: 1,
