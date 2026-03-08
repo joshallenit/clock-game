@@ -45,6 +45,8 @@ function drawClockCircle(): void {
 function drawHourTicks(): void {
   const hourInner = CLOCK.radius - CLOCK.hourTickInnerInset;
   const tickOuter = CLOCK.radius - CLOCK.tickOuterInset;
+  ctx.strokeStyle = COLORS.text;
+  ctx.lineWidth = CLOCK.hourTickWidth;
   for (let i = 0; i < 12; i++) {
     const angle = (i * Math.PI) / 6 - Math.PI / 2;
     ctx.beginPath();
@@ -56,8 +58,6 @@ function drawHourTicks(): void {
       CLOCK.center + tickOuter * Math.cos(angle),
       CLOCK.center + tickOuter * Math.sin(angle),
     );
-    ctx.strokeStyle = COLORS.text;
-    ctx.lineWidth = CLOCK.hourTickWidth;
     ctx.stroke();
   }
 }
@@ -65,6 +65,8 @@ function drawHourTicks(): void {
 function drawMinuteTicks(): void {
   const minuteInner = CLOCK.radius - CLOCK.minuteTickInnerInset;
   const tickOuter = CLOCK.radius - CLOCK.tickOuterInset;
+  ctx.strokeStyle = COLORS.muted;
+  ctx.lineWidth = CLOCK.minuteTickWidth;
   for (let i = 0; i < 60; i++) {
     if (i % 5 === 0) continue;
     const angle = (i * Math.PI) / 30 - Math.PI / 2;
@@ -77,8 +79,6 @@ function drawMinuteTicks(): void {
       CLOCK.center + tickOuter * Math.cos(angle),
       CLOCK.center + tickOuter * Math.sin(angle),
     );
-    ctx.strokeStyle = COLORS.muted;
-    ctx.lineWidth = CLOCK.minuteTickWidth;
     ctx.stroke();
   }
 }

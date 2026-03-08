@@ -9,7 +9,8 @@ let canvas: HTMLCanvasElement;
 let ctx: CanvasRenderingContext2D;
 
 interface FxState {
-  activeAnim: number | null;
+  confettiAnim: number | null;
+  rainAnim: number | null;
   rainShakeFrames: number;
   resizeTimer: TimeoutId;
   logicalWidth: number;
@@ -18,7 +19,8 @@ interface FxState {
 
 // Module-private rendering state (not in state.ts because it's purely visual/internal)
 const fxState: FxState = {
-  activeAnim: null,
+  confettiAnim: null,
+  rainAnim: null,
   rainShakeFrames: 0,
   resizeTimer: null,
   logicalWidth: 0,
@@ -50,7 +52,9 @@ export function initEffects(): void {
 
 const FRAME_MS_60HZ = 1000 / 60;
 
-function runParticleLoop<P>(config: {
+type AnimKey = "confettiAnim" | "rainAnim";
+
+function runParticleLoop<P>(animKey: AnimKey, config: {
   particles: P[];
   beforeDraw?: (particles: P[], dt: number, width: number, height: number) => void;
   updateParticle: (particle: P, dt: number, width: number, height: number) => boolean;
@@ -58,7 +62,7 @@ function runParticleLoop<P>(config: {
   onDone?: () => void;
 }): boolean {
   if (prefersReducedMotion()) return false;
-  if (fxState.activeAnim !== null) cancelAnimationFrame(fxState.activeAnim);
+  if (fxState[animKey] !== null) cancelAnimationFrame(fxState[animKey]);
 
   let lastTime = performance.now();
 
@@ -81,15 +85,15 @@ function runParticleLoop<P>(config: {
     }
 
     if (alive) {
-      fxState.activeAnim = requestAnimationFrame(step);
+      fxState[animKey] = requestAnimationFrame(step);
     } else {
       ctx.clearRect(0, 0, cw, ch);
-      fxState.activeAnim = null;
+      fxState[animKey] = null;
       config.onDone?.();
     }
   }
 
-  fxState.activeAnim = requestAnimationFrame(step);
+  fxState[animKey] = requestAnimationFrame(step);
   return true;
 }
 
@@ -116,7 +120,7 @@ export function launchConfetti(): void {
     });
   }
 
-  runParticleLoop({
+  runParticleLoop("confettiAnim", {
     particles,
     updateParticle(p, dt) {
       if (p.life <= 0) return false;
@@ -161,7 +165,7 @@ export function launchRain(): void {
 
   fxState.rainShakeFrames = ANIM.rainShakeFrames;
 
-  runParticleLoop({
+  runParticleLoop("rainAnim", {
     particles,
     beforeDraw(parts, dt, canvasW, canvasH) {
       // Screen shake
