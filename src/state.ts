@@ -13,4 +13,7 @@ export const state: GameState = {
   elapsedInterval: null,
   correctLabel: "",
   spinAnimId: null,
+  elapsedStart: 0,
+  roundStart: 0,
+  roundDuration: 0,
 };

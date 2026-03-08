@@ -1,3 +1,4 @@
+// Clock canvas: draw face/hands/numbers, animated spin transition between rounds.
 import { CLOCK, RULES, ANIM } from "./constants";
 import { COLORS } from "./colors";
 import { dom } from "./dom";

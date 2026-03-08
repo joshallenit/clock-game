@@ -1,3 +1,4 @@
+// Daily speed records via localStorage. Tracks best completion time per day.
 import { dom } from "./dom";
 import { state } from "./state";
 import { formatElapsed, escapeHtml } from "./utils";

@@ -1,3 +1,4 @@
+// Dog sprite drawing + animations: run left/right, approach camera, sad sit on clock.
 import { CLOCK, ANIM } from "./constants";
 import { COLORS } from "./colors";
 import { dom } from "./dom";

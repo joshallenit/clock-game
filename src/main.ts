@@ -1,3 +1,4 @@
+// Entry point: imports styles, sets up modal focus trap, and boots the game.
 import "./styles.css";
 import { dom } from "./dom";
 import { submitName } from "./records";

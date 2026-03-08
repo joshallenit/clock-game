@@ -1,3 +1,4 @@
+// Round orchestration: pick time, lock/unlock controls, handle answers, transitions.
 import { RULES } from "./constants";
 import { onColorSchemeChange } from "./colors";
 import { dom } from "./dom";
@@ -12,11 +13,14 @@ import { updateRecordBanner } from "./records";
 import { updateElapsedDisplay, stopElapsedTimer, startRoundTimer, stopRoundTimer } from "./timer";
 import { showWinScreen, showLoseScreen } from "./screens";
 
-// --- Mistakes display ---
+const HEART = "❤️";
+const BLACK_HEART = "🖤";
+const CHECK = "✔";
+const CROSS = "✘";
 
 function updateMistakesDisplay(): void {
   const remaining = RULES.maxMistakes - state.mistakes;
-  dom.mistakes.textContent = "\u2764\uFE0F".repeat(remaining) + "\uD83D\uDDA4".repeat(state.mistakes);
+  dom.mistakes.textContent = HEART.repeat(remaining) + BLACK_HEART.repeat(state.mistakes);
 }
 
 // --- Options panel ---
@@ -126,7 +130,7 @@ function handleCorrect(btn: HTMLButtonElement | null): void {
     return;
   }
 
-  dom.feedback.textContent = "\u2714 Correct!";
+  dom.feedback.textContent = `${CHECK} Correct!`;
   dom.feedback.className = "correct";
   playCorrectSound();
   dom.answer.value = "";
@@ -165,11 +169,11 @@ function handleMistake(feedbackText: string, btn: HTMLButtonElement | null): voi
 }
 
 function handleIncorrect(btn: HTMLButtonElement | null): void {
-  handleMistake("\u2718 Incorrect! It was " + state.correctLabel, btn);
+  handleMistake(`${CROSS} Incorrect! It was ${state.correctLabel}`, btn);
 }
 
 function handleTimeout(): void {
-  handleMistake("\u2718 Time's up! It was " + state.correctLabel, null);
+  handleMistake(`${CROSS} Time's up! It was ${state.correctLabel}`, null);
 }
 
 // --- Option click handler ---

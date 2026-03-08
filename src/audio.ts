@@ -1,3 +1,12 @@
+// Note frequencies (Hz) used by sound effects
+const NOTE = {
+  C4: 261.63, D4: 293.66, E4: 329.63, G4: 392.0, A4: 440.0,
+  Eb4: 311.13, F4: 349.23,
+  C5: 523.25, E5: 659.25, G5: 783.99, C6: 1046.5, E6: 1318.51,
+  D3: 146.83, G3: 196.0, A3: 220.0,
+  SUB_BASS: 40, LOW_BASS: 60,
+} as const;
+
 let audioCtx: AudioContext | null = null;
 
 function getAudioContext(): AudioContext | null {
@@ -32,27 +41,32 @@ function playTone(
   osc.stop(startTime + duration);
 }
 
+// Ascending arpeggio: C5 → E5 → G5 → C6 → E6
+const CORRECT_NOTES = [NOTE.C5, NOTE.E5, NOTE.G5, NOTE.C6, NOTE.E6];
+
 export function playCorrectSound(): void {
   const ctx = getAudioContext();
   if (!ctx) return;
-  const notes = [523.25, 659.25, 783.99, 1046.5, 1318.51];
   const now = ctx.currentTime;
-  notes.forEach((freq, i) => {
+  CORRECT_NOTES.forEach((freq, i) => {
     playTone(ctx, freq, "triangle", now + i * 0.1, 0.6, 0.5);
     playTone(ctx, freq, "square", now + i * 0.1, 0.6, 0.15);
   });
 }
 
+// Descending: G4 → F4 → Eb4 → C4 (with detuned doubles for dissonance)
+const INCORRECT_NOTES = [NOTE.G4, NOTE.F4, NOTE.Eb4, NOTE.C4];
+const DETUNE_RATIO = 0.998;
+
 export function playIncorrectSound(): void {
   const ctx = getAudioContext();
   if (!ctx) return;
-  const notes = [392.0, 349.23, 311.13, 261.63];
   const now = ctx.currentTime;
-  notes.forEach((freq, i) => {
+  INCORRECT_NOTES.forEach((freq, i) => {
     playTone(ctx, freq, "sawtooth", now + i * 0.25, 0.8, 0.5);
-    playTone(ctx, freq * 0.998, "sawtooth", now + i * 0.25, 0.8, 0.5);
+    playTone(ctx, freq * DETUNE_RATIO, "sawtooth", now + i * 0.25, 0.8, 0.5);
   });
-  playTone(ctx, 60, "sine", now, 1.5, 0.6);
+  playTone(ctx, NOTE.LOW_BASS, "sine", now, 1.5, 0.6);
 }
 
 export function playWhineSound(): void {
@@ -93,14 +107,17 @@ export function playWhineSound(): void {
   osc2.stop(now + 1.0);
 }
 
+// Descending doom: D4 → C4 → A3 → G3 → D3 (with detuned doubles)
+const GAME_OVER_NOTES = [NOTE.D4, NOTE.C4, NOTE.A3, NOTE.G3, NOTE.D3];
+const GAME_OVER_DETUNE = 0.997;
+
 export function playGameOverSound(): void {
   const ctx = getAudioContext();
   if (!ctx) return;
-  const notes = [293.66, 261.63, 220.0, 196.0, 146.83];
   const now = ctx.currentTime;
-  notes.forEach((freq, i) => {
+  GAME_OVER_NOTES.forEach((freq, i) => {
     playTone(ctx, freq, "sawtooth", now + i * 0.35, 1.2, 0.4);
-    playTone(ctx, freq * 0.997, "sawtooth", now + i * 0.35, 1.2, 0.4);
+    playTone(ctx, freq * GAME_OVER_DETUNE, "sawtooth", now + i * 0.35, 1.2, 0.4);
   });
-  playTone(ctx, 40, "sine", now, 2.5, 0.7);
+  playTone(ctx, NOTE.SUB_BASS, "sine", now, 2.5, 0.7);
 }

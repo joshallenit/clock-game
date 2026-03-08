@@ -13,6 +13,11 @@ export interface GameState {
   correctLabel: string;
   /** Active requestAnimationFrame ID for the clock spin transition. */
   spinAnimId: number | null;
+
+  // Timer internals (previously module-level lets in timer.ts)
+  elapsedStart: number;
+  roundStart: number;
+  roundDuration: number;
 }
 
 /** Typed references to every DOM element the game interacts with. */

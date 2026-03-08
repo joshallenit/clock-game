@@ -1,3 +1,4 @@
+// Elapsed timer (total game) + per-round countdown timer. All state lives in state.ts.
 import { getTimeLimitMs } from "./constants";
 import { dom } from "./dom";
 import { state } from "./state";
@@ -9,13 +10,11 @@ export function updateElapsedDisplay(): void {
   dom.elapsed.textContent = formatElapsed(state.elapsedMs);
 }
 
-let elapsedStart = 0;
-
 export function startElapsedTimer(): void {
   if (state.elapsedInterval) clearInterval(state.elapsedInterval);
-  elapsedStart = Date.now() - state.elapsedMs;
+  state.elapsedStart = Date.now() - state.elapsedMs;
   state.elapsedInterval = setInterval(() => {
-    state.elapsedMs = Date.now() - elapsedStart;
+    state.elapsedMs = Date.now() - state.elapsedStart;
     updateElapsedDisplay();
   }, 100);
 }
@@ -42,19 +41,16 @@ function updateTimerDisplay(): void {
   }
 }
 
-let roundStart = 0;
-let roundDuration = 0;
-
 export function startRoundTimer(onTimeout: () => void): void {
   if (state.timerInterval) clearInterval(state.timerInterval);
-  roundDuration = getTimeLimitMs(state.score);
-  state.remainingMs = roundDuration;
-  roundStart = Date.now();
+  state.roundDuration = getTimeLimitMs(state.score);
+  state.remainingMs = state.roundDuration;
+  state.roundStart = Date.now();
   updateTimerDisplay();
   startElapsedTimer();
   state.timerInterval = setInterval(() => {
-    const elapsed = Date.now() - roundStart;
-    state.remainingMs = Math.max(0, roundDuration - elapsed);
+    const elapsed = Date.now() - state.roundStart;
+    state.remainingMs = Math.max(0, state.roundDuration - elapsed);
     if (state.remainingMs <= 0) {
       if (state.timerInterval) clearInterval(state.timerInterval);
       onTimeout();

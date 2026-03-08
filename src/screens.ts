@@ -1,3 +1,4 @@
+// Win/lose screen display with celebration confetti bursts and sad rain waves.
 import { ANIM } from "./constants";
 import { dom } from "./dom";
 import { state } from "./state";

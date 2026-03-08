@@ -1,3 +1,4 @@
+// Confetti burst + rain particles on shared overlay canvas (#confetti-canvas).
 import { ANIM } from "./constants";
 import { CONFETTI_COLORS, COLORS } from "./colors";
 import { dom } from "./dom";
@@ -7,6 +8,7 @@ import type { ConfettiParticle, RainParticle } from "./types";
 const canvas = dom.confettiCanvas;
 const ctx = getContext2D(canvas);
 
+// Module-private rendering state (not in state.ts because it's purely visual/internal)
 const fxState = {
   activeAnim: null as number | null,
   rainShakeFrames: 0,

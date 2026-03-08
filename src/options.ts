@@ -1,3 +1,4 @@
+// Generate 6 multiple-choice time answers: correct, swapped, nearby, and random fill.
 import { RULES } from "./constants";
 import { state } from "./state";
 import { formatTime } from "./utils";
