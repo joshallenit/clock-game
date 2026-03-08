@@ -1,6 +1,7 @@
 import { CLOCK, RULES, COLORS, dom, state } from "./config";
+import { getContext2D } from "./utils";
 
-const ctx = dom.clock.getContext("2d")!;
+const ctx = getContext2D(dom.clock);
 
 export function drawHand(angle: number, length: number, width: number, color: string): void {
   ctx.beginPath();

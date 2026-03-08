@@ -1,10 +1,11 @@
 import { CLOCK, COLORS, ANIM, dom } from "./config";
+import { getContext2D } from "./utils";
 import { drawClockFace } from "./clock";
 import type { AnimRef } from "./types";
 
-const clockCtx = dom.clock.getContext("2d")!;
+const clockCtx = getContext2D(dom.clock);
 const fxCanvas = dom.confettiCanvas;
-const fxCtx = fxCanvas.getContext("2d")!;
+const fxCtx = getContext2D(fxCanvas);
 
 const S = 1.2; // sprite scale factor
 

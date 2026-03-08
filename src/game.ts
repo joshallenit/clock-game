@@ -178,7 +178,7 @@ function handleCorrect(btn: HTMLButtonElement | null): void {
     return;
   }
 
-  dom.feedback.textContent = "Correct!";
+  dom.feedback.textContent = "\u2714 Correct!";
   dom.feedback.className = "correct";
   playCorrectSound();
   dom.answer.value = "";
@@ -217,11 +217,11 @@ function handleMistake(feedbackText: string, btn: HTMLButtonElement | null): voi
 }
 
 function handleIncorrect(btn: HTMLButtonElement | null): void {
-  handleMistake("Incorrect! It was " + currentCorrectLabel, btn);
+  handleMistake("\u2718 Incorrect! It was " + currentCorrectLabel, btn);
 }
 
 function handleTimeout(): void {
-  handleMistake("Time's up! It was " + currentCorrectLabel, null);
+  handleMistake("\u2718 Time's up! It was " + currentCorrectLabel, null);
 }
 
 // --- Option click handler ---
@@ -266,6 +266,7 @@ function showWinScreen(): void {
   dom.winScreen.style.display = "flex";
   launchConfetti();
   playCorrectSound();
+  dom.playAgainBtn.focus();
 
   let bursts = 0;
   const interval = setInterval(() => {
@@ -287,6 +288,7 @@ function showLoseScreen(): void {
   dom.loseScreen.style.display = "flex";
   playGameOverSound();
   launchRain();
+  dom.tryAgainBtn.focus();
 
   let waves = 0;
   const interval = setInterval(() => {

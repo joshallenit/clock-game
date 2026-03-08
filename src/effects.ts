@@ -1,11 +1,13 @@
 import { CONFETTI_COLORS, COLORS, ANIM, dom } from "./config";
+import { getContext2D, prefersReducedMotion } from "./utils";
 import type { ConfettiParticle, RainParticle } from "./types";
 
 const canvas = dom.confettiCanvas;
-const ctx = canvas.getContext("2d")!;
+const ctx = getContext2D(canvas);
 
 let activeAnim: number | null = null;
 let rainShakeFrames = 0;
+let resizeTimer: ReturnType<typeof setTimeout> | null = null;
 
 function resizeCanvas(): void {
   canvas.width = window.innerWidth;
@@ -13,7 +15,10 @@ function resizeCanvas(): void {
 }
 
 resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
+window.addEventListener("resize", () => {
+  if (resizeTimer !== null) clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(resizeCanvas, 100);
+});
 
 // --- Shared particle animation loop ---
 
@@ -52,6 +57,8 @@ function runParticleLoop<P>(config: {
 // --- Confetti burst from screen center ---
 
 export function launchConfetti(): void {
+  if (prefersReducedMotion()) return;
+
   const cx = canvas.width / 2;
   const cy = canvas.height / 2;
 
@@ -99,6 +106,8 @@ export function launchConfetti(): void {
 // --- Sad rain with screen shake ---
 
 export function launchRain(): void {
+  if (prefersReducedMotion()) return;
+
   resizeCanvas();
 
   const cw = canvas.width;

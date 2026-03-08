@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Doggy and The Clocky - a fun clock-reading game for kids. Learn to tell time with an analog clock!">
   <title>Clock Game</title>
 </head>
 <body>
@@ -13,12 +14,13 @@
   </div>
 
   <!-- New Record Name Modal -->
-  <div id="name-modal">
+  <div id="name-modal" role="dialog" aria-modal="true" aria-labelledby="name-modal-title">
     <div class="modal-box">
-      <h2>New Record!</h2>
+      <h2 id="name-modal-title">New Record!</h2>
       <div class="record-time" id="new-record-time"></div>
       <p>Enter your name for the leaderboard:</p>
       <div>
+        <label for="name-input" class="sr-only">Your name</label>
         <input type="text" id="name-input" placeholder="Your name" maxlength="20">
         <button id="name-submit-btn">Save</button>
       </div>
@@ -26,30 +28,31 @@
   </div>
 
   <!-- Effects Overlay -->
-  <canvas id="confetti-canvas" width="1000" height="1000"></canvas>
+  <canvas id="confetti-canvas" width="1000" height="1000" aria-hidden="true"></canvas>
 
   <!-- Game Area -->
-  <div id="game-area">
+  <main id="game-area">
     <div id="game-layout">
       <div id="left-panel">
         <div id="timer">1:00</div>
         <div id="score">Score: 0/10</div>
         <div id="mistakes"></div>
       </div>
-      <canvas id="clock" width="500" height="500"></canvas>
+      <canvas id="clock" width="500" height="500" role="img" aria-label="Analog clock showing the time to guess"></canvas>
       <div id="right-panel">
         <div id="options-panel"></div>
         <div id="input-row">
+          <label for="answer" class="sr-only">Enter time as H:MM</label>
           <input type="text" id="answer" placeholder="7:30">
           <button id="submit-btn">Submit</button>
         </div>
       </div>
     </div>
-    <div id="feedback"></div>
-  </div>
+    <div id="feedback" aria-live="polite"></div>
+  </main>
 
   <!-- Win Screen -->
-  <div id="win-screen">
+  <section id="win-screen">
     <h1>You've Won!</h1>
     <div class="prize-box">
       <div class="book-icon">📖</div>
@@ -61,10 +64,10 @@
       <p style="margin-top: 16px; font-size: 14px; color: #888;">A fascinating journey through history told through the clocks that shaped our world.</p>
     </div>
     <button id="play-again-btn">Play Again</button>
-  </div>
+  </section>
 
   <!-- Lose Screen -->
-  <div id="lose-screen">
+  <section id="lose-screen">
     <h1>Game Over</h1>
     <div class="lose-box">
       <div class="lose-icon">💔</div>
@@ -74,7 +77,7 @@
       <p>Keep practicing and you'll master the clock in no time.</p>
     </div>
     <button id="try-again-btn">Try Again</button>
-  </div>
+  </section>
 
   <script type="module" src="/src/main.ts"></script>
 </body>

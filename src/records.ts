@@ -10,8 +10,15 @@ function getTodayKey(): string {
 }
 
 function loadRecord(): DailyRecord | null {
-  const data = localStorage.getItem(getTodayKey());
-  return data ? (JSON.parse(data) as DailyRecord) : null;
+  const key = getTodayKey();
+  const data = localStorage.getItem(key);
+  if (!data) return null;
+  try {
+    return JSON.parse(data) as DailyRecord;
+  } catch {
+    localStorage.removeItem(key);
+    return null;
+  }
 }
 
 function saveRecord(ms: number, name: string): void {

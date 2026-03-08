@@ -1,7 +1,13 @@
-const audioCtx = new AudioContext();
+let audioCtx: AudioContext | null = null;
+
+try {
+  audioCtx = new AudioContext();
+} catch {
+  // AudioContext unavailable — all sound functions become no-ops
+}
 
 function resumeAudio(): void {
-  if (audioCtx.state === "suspended") audioCtx.resume();
+  if (audioCtx?.state === "suspended") audioCtx.resume();
 }
 
 document.addEventListener("click", resumeAudio);
@@ -14,6 +20,7 @@ function playTone(
   duration: number,
   volume: number,
 ): void {
+  if (!audioCtx) return;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = type;
@@ -27,6 +34,7 @@ function playTone(
 }
 
 export function playCorrectSound(): void {
+  if (!audioCtx) return;
   resumeAudio();
   const notes = [523.25, 659.25, 783.99, 1046.5, 1318.51];
   const now = audioCtx.currentTime;
@@ -37,6 +45,7 @@ export function playCorrectSound(): void {
 }
 
 export function playIncorrectSound(): void {
+  if (!audioCtx) return;
   resumeAudio();
   const notes = [392.0, 349.23, 311.13, 261.63];
   const now = audioCtx.currentTime;
@@ -48,6 +57,7 @@ export function playIncorrectSound(): void {
 }
 
 export function playWhineSound(): void {
+  if (!audioCtx) return;
   resumeAudio();
   const now = audioCtx.currentTime;
 
@@ -85,6 +95,7 @@ export function playWhineSound(): void {
 }
 
 export function playGameOverSound(): void {
+  if (!audioCtx) return;
   resumeAudio();
   const notes = [293.66, 261.63, 220.0, 196.0, 146.83];
   const now = audioCtx.currentTime;

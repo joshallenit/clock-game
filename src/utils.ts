@@ -15,3 +15,15 @@ export function escapeHtml(str: string): string {
   div.textContent = str;
   return div.innerHTML;
 }
+
+export function getContext2D(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error(`Failed to get 2D context for canvas#${canvas.id || "(unnamed)"}`);
+  }
+  return ctx;
+}
+
+export function prefersReducedMotion(): boolean {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
