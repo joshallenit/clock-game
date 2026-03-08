@@ -1,15 +1,16 @@
-import { RULES, CLOCK, ANIM } from "./constants";
-import { COLORS, onColorSchemeChange } from "./colors";
+import { RULES } from "./constants";
+import { onColorSchemeChange } from "./colors";
 import { dom } from "./dom";
 import { state } from "./state";
 import { formatTime } from "./utils";
-import { drawClockFace, drawHand, drawCenterDot, drawClockAt, updateClockAriaLabel } from "./clock";
+import { drawClockAt, animateToTime } from "./clock";
 import { generateOptions } from "./options";
 import { launchConfetti, launchRain } from "./effects";
 import { launchDog, launchDogReverse, launchDogApproach, launchSadDog } from "./dog";
-import { playCorrectSound, playIncorrectSound, playWhineSound, playGameOverSound } from "./audio";
-import { isNewRecord, promptForName, updateRecordBanner } from "./records";
+import { playCorrectSound, playIncorrectSound, playWhineSound } from "./audio";
+import { updateRecordBanner } from "./records";
 import { updateElapsedDisplay, stopElapsedTimer, startRoundTimer, stopRoundTimer } from "./timer";
+import { showWinScreen, showLoseScreen } from "./screens";
 
 // --- Mistakes display ---
 
@@ -17,11 +18,6 @@ function updateMistakesDisplay(): void {
   const remaining = RULES.maxMistakes - state.mistakes;
   dom.mistakes.textContent = "\u2764\uFE0F".repeat(remaining) + "\uD83D\uDDA4".repeat(state.mistakes);
 }
-
-// --- Current round's correct answer ---
-
-let currentCorrectLabel = "";
-let spinAnim: number | null = null;
 
 // --- Options panel ---
 
@@ -35,7 +31,7 @@ function renderOptions(): void {
   dom.optionsPanel.innerHTML = "";
   dom.optionsPanel.style.maxHeight = "";
   const options = generateOptions();
-  currentCorrectLabel = formatTime(state.targetHours, state.targetMinutes);
+  state.correctLabel = formatTime(state.targetHours, state.targetMinutes);
 
   const hintBtn = document.createElement("button");
   hintBtn.className = "option-btn hint-btn";
@@ -74,58 +70,6 @@ function pickRandomTime(): void {
       : Math.floor(Math.random() * 12) * 5;
 }
 
-// --- Spinning hands transition ---
-
-function spinHandsToTarget(onComplete: () => void): void {
-  if (spinAnim !== null) cancelAnimationFrame(spinAnim);
-  let frame = 0;
-
-  const startMinAngle = Math.random() * Math.PI * 2;
-  const startHourAngle = Math.random() * Math.PI * 2;
-  const targetMinAngle = (state.targetMinutes * Math.PI) / 30 - Math.PI / 2;
-  const targetHourAngle =
-    (((state.targetHours % 12) + state.targetMinutes / 60) * Math.PI) / 6 - Math.PI / 2;
-
-  let endMinAngle = targetMinAngle + Math.PI * 8;
-  while (endMinAngle < startMinAngle) endMinAngle += Math.PI * 2;
-  let endHourAngle = targetHourAngle + Math.PI * 4;
-  while (endHourAngle < startHourAngle) endHourAngle += Math.PI * 2;
-
-  function animate(): void {
-    frame++;
-    const t = frame / ANIM.spinFrames;
-    const ease = 1 - Math.pow(1 - t, 5);
-
-    const currentMin = startMinAngle + (endMinAngle - startMinAngle) * ease;
-    const currentHour = startHourAngle + (endHourAngle - startHourAngle) * ease;
-
-    drawClockFace();
-    drawHand(
-      currentHour,
-      CLOCK.radius * CLOCK.hourHand.lengthRatio,
-      CLOCK.hourHand.width,
-      COLORS.text,
-    );
-    drawHand(
-      currentMin,
-      CLOCK.radius * CLOCK.minuteHand.lengthRatio,
-      CLOCK.minuteHand.width,
-      COLORS.accent,
-    );
-    drawCenterDot();
-
-    if (frame < ANIM.spinFrames) {
-      spinAnim = requestAnimationFrame(animate);
-    } else {
-      spinAnim = null;
-      updateClockAriaLabel(state.targetHours, state.targetMinutes);
-      onComplete();
-    }
-  }
-
-  animate();
-}
-
 // --- Controls lock/unlock ---
 
 function unlockControls(): void {
@@ -152,21 +96,21 @@ function transitionToNextRound(): void {
   lockControls();
   pickRandomTime();
   const anim = happyDogAnims[Math.floor(Math.random() * happyDogAnims.length)];
-  anim(() => spinHandsToTarget(unlockControls));
+  anim(() => animateToTime(state.targetHours, state.targetMinutes, unlockControls));
 }
 
 function sadDogTransition(): void {
   lockControls();
   launchSadDog(() => {
     pickRandomTime();
-    spinHandsToTarget(unlockControls);
+    animateToTime(state.targetHours, state.targetMinutes, unlockControls);
   });
 }
 
 function spinToNextRound(): void {
   lockControls();
   pickRandomTime();
-  spinHandsToTarget(unlockControls);
+  animateToTime(state.targetHours, state.targetMinutes, unlockControls);
 }
 
 // --- Handle correct answer ---
@@ -221,18 +165,18 @@ function handleMistake(feedbackText: string, btn: HTMLButtonElement | null): voi
 }
 
 function handleIncorrect(btn: HTMLButtonElement | null): void {
-  handleMistake("\u2718 Incorrect! It was " + currentCorrectLabel, btn);
+  handleMistake("\u2718 Incorrect! It was " + state.correctLabel, btn);
 }
 
 function handleTimeout(): void {
-  handleMistake("\u2718 Time's up! It was " + currentCorrectLabel, null);
+  handleMistake("\u2718 Time's up! It was " + state.correctLabel, null);
 }
 
 // --- Option click handler ---
 
 function handleOptionClick(label: string, btn: HTMLButtonElement): void {
   if (state.transitioning) return;
-  if (label === currentCorrectLabel) {
+  if (label === state.correctLabel) {
     handleCorrect(btn);
   } else {
     handleIncorrect(btn);
@@ -260,46 +204,6 @@ function checkAnswer(): void {
   } else {
     handleIncorrect(null);
   }
-}
-
-// --- Win / Lose screens ---
-
-function showWinScreen(): void {
-  stopElapsedTimer();
-  dom.gameArea.hidden = true;
-  dom.winScreen.hidden = false;
-  launchConfetti();
-  playCorrectSound();
-  dom.playAgainBtn.focus();
-
-  let bursts = 0;
-  const interval = setInterval(() => {
-    bursts++;
-    launchConfetti();
-    if (bursts >= ANIM.winConfettiBursts) {
-      clearInterval(interval);
-      if (isNewRecord(state.elapsedMs)) {
-        promptForName(state.elapsedMs);
-      }
-    }
-  }, 800);
-}
-
-function showLoseScreen(): void {
-  stopElapsedTimer();
-  dom.gameArea.hidden = true;
-  dom.finalScoreValue.textContent = String(state.score);
-  dom.loseScreen.hidden = false;
-  playGameOverSound();
-  launchRain();
-  dom.tryAgainBtn.focus();
-
-  let waves = 0;
-  const interval = setInterval(() => {
-    waves++;
-    launchRain();
-    if (waves >= ANIM.loseRainWaves) clearInterval(interval);
-  }, 1200);
 }
 
 // --- Reset ---
@@ -334,7 +238,6 @@ export function initGame(): void {
   dom.playAgainBtn.addEventListener("click", resetGame);
   dom.tryAgainBtn.addEventListener("click", resetGame);
 
-  // Redraw the clock when the OS color scheme changes mid-game
   onColorSchemeChange(() => {
     if (state.targetHours > 0) {
       drawClockAt(state.targetHours, state.targetMinutes);

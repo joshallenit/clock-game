@@ -1,6 +1,6 @@
 import type { GameState } from "./types";
 
-/** Mutable game state - single source of truth for all round/session data. */
+/** Mutable game state — single source of truth for all round/session data. */
 export const state: GameState = {
   targetHours: 0,
   targetMinutes: 0,
@@ -11,4 +11,6 @@ export const state: GameState = {
   transitioning: false,
   timerInterval: null,
   elapsedInterval: null,
+  correctLabel: "",
+  spinAnimId: null,
 };

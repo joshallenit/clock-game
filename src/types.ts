@@ -9,6 +9,10 @@ export interface GameState {
   transitioning: boolean;
   timerInterval: ReturnType<typeof setInterval> | null;
   elapsedInterval: ReturnType<typeof setInterval> | null;
+  /** The formatted correct answer for the current round (e.g. "7:30"). */
+  correctLabel: string;
+  /** Active requestAnimationFrame ID for the clock spin transition. */
+  spinAnimId: number | null;
 }
 
 /** Typed references to every DOM element the game interacts with. */

@@ -1,4 +1,4 @@
-import { CLOCK, RULES } from "./constants";
+import { CLOCK, RULES, ANIM } from "./constants";
 import { COLORS } from "./colors";
 import { dom } from "./dom";
 import { state } from "./state";
@@ -113,4 +113,44 @@ export function drawClockAt(h: number, m: number): void {
     COLORS.accent,
   );
   drawCenterDot();
+}
+
+/** Spin clock hands from random angles to the target time, then call onComplete. */
+export function animateToTime(h: number, m: number, onComplete: () => void): void {
+  if (state.spinAnimId !== null) cancelAnimationFrame(state.spinAnimId);
+  let frame = 0;
+
+  const startMinAngle = Math.random() * Math.PI * 2;
+  const startHourAngle = Math.random() * Math.PI * 2;
+  const targetMinAngle = (m * Math.PI) / 30 - Math.PI / 2;
+  const targetHourAngle = (((h % 12) + m / 60) * Math.PI) / 6 - Math.PI / 2;
+
+  let endMinAngle = targetMinAngle + Math.PI * 8;
+  while (endMinAngle < startMinAngle) endMinAngle += Math.PI * 2;
+  let endHourAngle = targetHourAngle + Math.PI * 4;
+  while (endHourAngle < startHourAngle) endHourAngle += Math.PI * 2;
+
+  function animate(): void {
+    frame++;
+    const t = frame / ANIM.spinFrames;
+    const ease = 1 - Math.pow(1 - t, 5);
+
+    const currentMin = startMinAngle + (endMinAngle - startMinAngle) * ease;
+    const currentHour = startHourAngle + (endHourAngle - startHourAngle) * ease;
+
+    drawClockFace();
+    drawHand(currentHour, CLOCK.radius * CLOCK.hourHand.lengthRatio, CLOCK.hourHand.width, COLORS.text);
+    drawHand(currentMin, CLOCK.radius * CLOCK.minuteHand.lengthRatio, CLOCK.minuteHand.width, COLORS.accent);
+    drawCenterDot();
+
+    if (frame < ANIM.spinFrames) {
+      state.spinAnimId = requestAnimationFrame(animate);
+    } else {
+      state.spinAnimId = null;
+      updateClockAriaLabel(h, m);
+      onComplete();
+    }
+  }
+
+  animate();
 }
