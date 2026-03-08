@@ -6,8 +6,13 @@ function getEl<T extends HTMLElement>(id: string): T {
   return el as T;
 }
 
-/** DOM refs are populated by initDom(). Accessing before init throws on use. */
-export const dom = {} as DomRefs;
+/** DOM refs are populated by initDom(). Accessing before init throws at the call site. */
+export const dom: DomRefs = new Proxy({} as DomRefs, {
+  get(target, prop, receiver) {
+    if (prop in target) return Reflect.get(target, prop, receiver);
+    throw new Error(`DOM not initialized: accessed dom.${String(prop)} before initDom()`);
+  },
+});
 
 /** Populate all DOM refs. Must be called once after DOMContentLoaded. */
 export function initDom(): void {

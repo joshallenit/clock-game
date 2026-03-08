@@ -4,11 +4,13 @@ import { state } from "./state";
 import { formatElapsed } from "./utils";
 import type { DailyRecord } from "./types";
 
+const STORAGE_PREFIX = "clockRecord_";
+
 function getTodayKey(): string {
   const d = new Date();
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-  return `clockRecord_${d.getFullYear()}-${month}-${day}`;
+  return `${STORAGE_PREFIX}${d.getFullYear()}-${month}-${day}`;
 }
 
 function isValidRecord(data: unknown): data is DailyRecord {
@@ -74,11 +76,15 @@ export function updateRecordBanner(): void {
 function cleanupOldRecords(): void {
   const todayKey = getTodayKey();
   try {
-    for (let i = localStorage.length - 1; i >= 0; i--) {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key?.startsWith("clockRecord_") && key !== todayKey) {
-        localStorage.removeItem(key);
+      if (key?.startsWith(STORAGE_PREFIX) && key !== todayKey) {
+        keysToRemove.push(key);
       }
+    }
+    for (const key of keysToRemove) {
+      localStorage.removeItem(key);
     }
   } catch {
     // Storage unavailable

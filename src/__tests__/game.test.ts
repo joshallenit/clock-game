@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from "vitest";
 import { setupTestDOM } from "./test-dom";
 
 beforeAll(() => {
@@ -6,9 +6,20 @@ beforeAll(() => {
 });
 
 describe("game", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.useFakeTimers();
     localStorage.clear();
+    const { state } = await import("../state");
+    state.score = 0;
+    state.mistakes = 0;
+    state.elapsedMs = 0;
+    state.transitioning = false;
+    state.targetHours = 0;
+    state.targetMinutes = 0;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("initGame sets up initial state", async () => {

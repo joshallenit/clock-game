@@ -2,6 +2,7 @@
 import { RULES } from "./constants";
 import { state } from "./state";
 import { formatTime, randomInt } from "./utils";
+import { pickRandomMinutes } from "./difficulty";
 import type { TimeOption } from "./types";
 
 function wrapHour(h: number): number {
@@ -9,7 +10,7 @@ function wrapHour(h: number): number {
 }
 
 /** "Swapped" reading: interpret minute hand as hour, hour hand as minutes. */
-function getSwappedTime(h: number, m: number): { h: number; m: number } {
+export function getSwappedTime(h: number, m: number): { h: number; m: number } {
   let swappedH = Math.floor(m / 5);
   if (swappedH === 0) swappedH = 12;
   const swappedM = Math.round(((h % 12) + m / 60) * 5) % 60;
@@ -32,11 +33,11 @@ function deduplicateByLabel(candidates: TimeOption[]): TimeOption[] {
   return unique;
 }
 
-function fillWithRandomTimes(options: TimeOption[]): TimeOption[] {
+function fillWithRandomTimes(options: TimeOption[], score: number): TimeOption[] {
   const seen = new Set(options.map((o) => o.label));
   while (options.length < RULES.optionCount) {
     const rh = randomInt(1, 13);
-    const rm = randomInt(0, 12) * 5;
+    const rm = pickRandomMinutes(score);
     const rl = formatTime(rh, rm);
     if (!seen.has(rl)) {
       seen.add(rl);
@@ -68,5 +69,5 @@ export function generateOptions(): TimeOption[] {
     makeOption(wrapHour(swapped.h - 1), swapped.m),
   ];
 
-  return shuffle(fillWithRandomTimes(deduplicateByLabel(candidates)));
+  return shuffle(fillWithRandomTimes(deduplicateByLabel(candidates), state.score));
 }

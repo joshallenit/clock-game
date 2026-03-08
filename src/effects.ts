@@ -1,6 +1,4 @@
 // Confetti burst + rain particles on shared overlay canvas (#confetti-canvas).
-// NOTE: Particle physics are frame-rate dependent (slightly faster on 120 Hz).
-// This is acceptable for decorative effects that don't affect gameplay.
 import { ANIM } from "./constants";
 import { CONFETTI_COLORS, COLORS } from "./colors";
 import { dom } from "./dom";
@@ -47,27 +45,36 @@ export function initEffects(): void {
 }
 
 // --- Shared particle animation loop ---
+// dt is normalized so 1.0 = one frame at 60 fps (16.67 ms).
+// Multiplying per-frame values by dt keeps physics consistent across refresh rates.
+
+const FRAME_MS_60HZ = 1000 / 60;
 
 function runParticleLoop<P>(config: {
   particles: P[];
-  beforeDraw?: (particles: P[], width: number, height: number) => void;
-  updateParticle: (particle: P, width: number, height: number) => boolean;
+  beforeDraw?: (particles: P[], dt: number, width: number, height: number) => void;
+  updateParticle: (particle: P, dt: number, width: number, height: number) => boolean;
   drawParticle: (ctx: CanvasRenderingContext2D, particle: P) => void;
   onDone?: () => void;
 }): boolean {
   if (prefersReducedMotion()) return false;
   if (fxState.activeAnim !== null) cancelAnimationFrame(fxState.activeAnim);
 
-  function step(): void {
+  let lastTime = performance.now();
+
+  function step(now: number): void {
+    const dt = (now - lastTime) / FRAME_MS_60HZ;
+    lastTime = now;
+
     const cw = fxState.logicalWidth;
     const ch = fxState.logicalHeight;
     ctx.clearRect(0, 0, cw, ch);
 
-    config.beforeDraw?.(config.particles, cw, ch);
+    config.beforeDraw?.(config.particles, dt, cw, ch);
 
     let alive = false;
     for (const p of config.particles) {
-      if (config.updateParticle(p, cw, ch)) {
+      if (config.updateParticle(p, dt, cw, ch)) {
         alive = true;
         config.drawParticle(ctx, p);
       }
@@ -82,7 +89,7 @@ function runParticleLoop<P>(config: {
     }
   }
 
-  step();
+  fxState.activeAnim = requestAnimationFrame(step);
   return true;
 }
 
@@ -111,13 +118,13 @@ export function launchConfetti(): void {
 
   runParticleLoop({
     particles,
-    updateParticle(p) {
+    updateParticle(p, dt) {
       if (p.life <= 0) return false;
-      p.x += p.vx;
-      p.vy += 0.25;
-      p.y += p.vy;
-      p.rotation += p.rotationSpeed;
-      p.life -= 0.008;
+      p.x += p.vx * dt;
+      p.vy += 0.25 * dt;
+      p.y += p.vy * dt;
+      p.rotation += p.rotationSpeed * dt;
+      p.life -= 0.008 * dt;
       return true;
     },
     drawParticle(c, p) {
@@ -156,10 +163,10 @@ export function launchRain(): void {
 
   runParticleLoop({
     particles,
-    beforeDraw(parts, canvasW, canvasH) {
+    beforeDraw(parts, dt, canvasW, canvasH) {
       // Screen shake
       if (fxState.rainShakeFrames > 0) {
-        fxState.rainShakeFrames--;
+        fxState.rainShakeFrames -= dt;
         const shakeX = (Math.random() - 0.5) * 12;
         const shakeY = (Math.random() - 0.5) * 12;
         canvas.style.transform = `translate(${shakeX}px,${shakeY}px)`;
@@ -175,14 +182,14 @@ export function launchRain(): void {
       ctx.fillStyle = `rgba(${COLORS.rainOverlay}, ${0.4 * Math.min(1, maxLife)})`;
       ctx.fillRect(0, 0, canvasW, canvasH);
     },
-    updateParticle(p, _canvasW, canvasH) {
+    updateParticle(p, dt, _canvasW, canvasH) {
       if (p.delay > 0) {
-        p.delay--;
+        p.delay -= dt;
         return true;
       }
       if (p.life <= 0) return false;
-      p.y += p.vy;
-      if (p.y > canvasH) p.life -= 0.04;
+      p.y += p.vy * dt;
+      if (p.y > canvasH) p.life -= 0.04 * dt;
       return true;
     },
     drawParticle(c, p) {
