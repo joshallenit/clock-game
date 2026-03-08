@@ -1,20 +1,30 @@
 // Confetti burst + rain particles on shared overlay canvas (#confetti-canvas).
+// NOTE: Particle physics are frame-rate dependent (slightly faster on 120 Hz).
+// This is acceptable for decorative effects that don't affect gameplay.
 import { ANIM } from "./constants";
 import { CONFETTI_COLORS, COLORS } from "./colors";
 import { dom } from "./dom";
 import { setupHiDPICanvas, prefersReducedMotion, randomChoice } from "./utils";
 import type { ConfettiParticle, RainParticle, TimeoutId } from "./types";
 
-const canvas = dom.confettiCanvas;
-let ctx = setupHiDPICanvas(canvas, window.innerWidth, window.innerHeight);
+let canvas: HTMLCanvasElement;
+let ctx: CanvasRenderingContext2D;
+
+interface FxState {
+  activeAnim: number | null;
+  rainShakeFrames: number;
+  resizeTimer: TimeoutId;
+  logicalWidth: number;
+  logicalHeight: number;
+}
 
 // Module-private rendering state (not in state.ts because it's purely visual/internal)
-const fxState = {
-  activeAnim: null as number | null,
+const fxState: FxState = {
+  activeAnim: null,
   rainShakeFrames: 0,
-  resizeTimer: null as TimeoutId,
-  logicalWidth: window.innerWidth,
-  logicalHeight: window.innerHeight,
+  resizeTimer: null,
+  logicalWidth: 0,
+  logicalHeight: 0,
 };
 
 function resizeCanvas(): void {
@@ -23,10 +33,18 @@ function resizeCanvas(): void {
   ctx = setupHiDPICanvas(canvas, fxState.logicalWidth, fxState.logicalHeight);
 }
 
-window.addEventListener("resize", () => {
-  if (fxState.resizeTimer !== null) clearTimeout(fxState.resizeTimer);
-  fxState.resizeTimer = setTimeout(resizeCanvas, 100);
-});
+/** Set up the effects overlay canvas. Must be called after initDom(). */
+export function initEffects(): void {
+  canvas = dom.confettiCanvas;
+  fxState.logicalWidth = window.innerWidth;
+  fxState.logicalHeight = window.innerHeight;
+  ctx = setupHiDPICanvas(canvas, fxState.logicalWidth, fxState.logicalHeight);
+
+  window.addEventListener("resize", () => {
+    if (fxState.resizeTimer !== null) clearTimeout(fxState.resizeTimer);
+    fxState.resizeTimer = setTimeout(resizeCanvas, 100);
+  });
+}
 
 // --- Shared particle animation loop ---
 
@@ -36,7 +54,8 @@ function runParticleLoop<P>(config: {
   updateParticle: (particle: P, width: number, height: number) => boolean;
   drawParticle: (ctx: CanvasRenderingContext2D, particle: P) => void;
   onDone?: () => void;
-}): void {
+}): boolean {
+  if (prefersReducedMotion()) return false;
   if (fxState.activeAnim !== null) cancelAnimationFrame(fxState.activeAnim);
 
   function step(): void {
@@ -64,13 +83,12 @@ function runParticleLoop<P>(config: {
   }
 
   step();
+  return true;
 }
 
 // --- Confetti burst from screen center ---
 
 export function launchConfetti(): void {
-  if (prefersReducedMotion()) return;
-
   const cx = fxState.logicalWidth / 2;
   const cy = fxState.logicalHeight / 2;
 
@@ -117,8 +135,6 @@ export function launchConfetti(): void {
 // --- Sad rain with screen shake ---
 
 export function launchRain(): void {
-  if (prefersReducedMotion()) return;
-
   resizeCanvas();
 
   const cw = fxState.logicalWidth;

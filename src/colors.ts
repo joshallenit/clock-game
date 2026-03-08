@@ -98,7 +98,10 @@ function applyColorScheme(): void {
   for (const cb of schemeChangeListeners) cb();
 }
 
-applyColorScheme();
-if (typeof window.matchMedia === "function") {
-  window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", applyColorScheme);
+/** Apply initial color scheme and listen for OS theme changes. */
+export function initColors(): void {
+  applyColorScheme();
+  if (typeof window.matchMedia === "function") {
+    window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", applyColorScheme);
+  }
 }

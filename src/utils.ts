@@ -44,3 +44,13 @@ export function randomInt(min: number, max: number): number {
 export function randomChoice<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
+
+/** Hour hand angle in radians for the given time. 12 o'clock = -π/2. */
+export function hourHandAngle(h: number, m: number): number {
+  return (((h % 12) + m / 60) * Math.PI) / 6 - Math.PI / 2;
+}
+
+/** Minute hand angle in radians for the given minutes. :00 = -π/2. */
+export function minuteHandAngle(m: number): number {
+  return (m * Math.PI) / 30 - Math.PI / 2;
+}

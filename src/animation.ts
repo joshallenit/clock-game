@@ -1,4 +1,4 @@
-// Shared frame-based animation loop used by dog.ts and clock.ts.
+// Shared time-based animation loop used by dog.ts and clock.ts.
 import type { AnimRef } from "./types";
 
 /** Cancel an in-progress requestAnimationFrame loop. */
@@ -10,27 +10,42 @@ export function cancelAnimation(ref: AnimRef): void {
 }
 
 /**
- * Run a fixed-length animation loop using requestAnimationFrame.
+ * Run a time-based animation loop using requestAnimationFrame.
  * Cancels any previous animation on the same ref before starting.
+ *
+ * Unlike a frame-count loop, this uses wall-clock time so animations
+ * run at the same speed regardless of display refresh rate (60 Hz vs 120 Hz).
  */
 export function runFrameLoop(
-  totalFrames: number,
+  durationMs: number,
   ref: AnimRef,
-  onFrame: (frame: number, progress: number) => void,
+  onFrame: (elapsedMs: number, progress: number) => void,
   onComplete?: () => void,
 ): void {
   cancelAnimation(ref);
-  let frame = 0;
+  const startTime = performance.now();
+
+  function finish(): void {
+    ref.id = null;
+    onComplete?.();
+  }
 
   function step(): void {
-    frame++;
-    onFrame(frame, frame / totalFrames);
+    const elapsed = performance.now() - startTime;
+    const progress = Math.min(elapsed / durationMs, 1);
 
-    if (frame < totalFrames) {
+    try {
+      onFrame(elapsed, progress);
+    } catch (e) {
+      console.error("Animation frame error:", e);
+      finish();
+      return;
+    }
+
+    if (progress < 1) {
       ref.id = requestAnimationFrame(step);
     } else {
-      ref.id = null;
-      onComplete?.();
+      finish();
     }
   }
 

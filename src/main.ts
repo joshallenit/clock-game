@@ -1,8 +1,21 @@
-// Entry point: imports styles, sets up modal focus trap, and boots the game.
+// Entry point: explicit initialization order, modal focus trap, and game boot.
 import "./styles.css";
-import { dom } from "./dom";
-import { submitName } from "./records";
+import { initDom, dom } from "./dom";
+import { initColors } from "./colors";
+import { initRecords, submitName } from "./records";
+import { initClock } from "./clock";
+import { initEffects } from "./effects";
+import { initDog } from "./dog";
 import { initGame } from "./game";
+
+// --- Explicit module initialization (order matters) ---
+
+initDom();       // 1. Populate DOM refs (everything depends on this)
+initColors();    // 2. Apply color scheme (canvas modules need colors)
+initRecords();   // 3. Clean up old localStorage records
+initClock();     // 4. Set up clock canvas context
+initEffects();   // 5. Set up effects overlay canvas
+initDog();       // 6. Set up dog sprite canvas contexts
 
 // --- Modal focus management ---
 
@@ -44,4 +57,5 @@ dom.nameInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") submitName();
 });
 
+// 7. Boot the game (sets up listeners and starts first round)
 initGame();

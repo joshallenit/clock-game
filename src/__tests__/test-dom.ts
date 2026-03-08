@@ -1,8 +1,14 @@
 import { vi } from "vitest";
+import { initDom } from "../dom";
+import { initColors } from "../colors";
+import { initClock } from "../clock";
+import { initEffects } from "../effects";
+import { initDog } from "../dog";
+import { initRecords } from "../records";
 
-/** Shared DOM template matching index.html structure. Call in beforeAll(). */
+/** Shared DOM + module setup matching index.html structure. Call in beforeAll(). */
 export function setupTestDOM(): void {
-  // Mock canvas getContext for modules that grab it at import time
+  // Mock canvas getContext for modules that grab it at init time
   HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
     beginPath: vi.fn(),
     moveTo: vi.fn(),
@@ -48,4 +54,12 @@ export function setupTestDOM(): void {
     <section id="win-screen" hidden><button id="play-again-btn"></button></section>
     <section id="lose-screen" hidden><div class="lose-box"><span id="final-score-value"></span></div><button id="try-again-btn"></button></section>
   `;
+
+  // Initialize modules in the same order as main.ts
+  initDom();
+  initColors();
+  initRecords();
+  initClock();
+  initEffects();
+  initDog();
 }

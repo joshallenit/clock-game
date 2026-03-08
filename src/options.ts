@@ -20,6 +20,40 @@ function makeOption(h: number, m: number): TimeOption {
   return { h, m, label: formatTime(h, m) };
 }
 
+function deduplicateByLabel(candidates: TimeOption[]): TimeOption[] {
+  const seen = new Set<string>();
+  const unique: TimeOption[] = [];
+  for (const opt of candidates) {
+    if (!seen.has(opt.label)) {
+      seen.add(opt.label);
+      unique.push(opt);
+    }
+  }
+  return unique;
+}
+
+function fillWithRandomTimes(options: TimeOption[]): TimeOption[] {
+  const seen = new Set(options.map((o) => o.label));
+  while (options.length < RULES.optionCount) {
+    const rh = randomInt(1, 13);
+    const rm = randomInt(0, 12) * 5;
+    const rl = formatTime(rh, rm);
+    if (!seen.has(rl)) {
+      seen.add(rl);
+      options.push(makeOption(rh, rm));
+    }
+  }
+  return options;
+}
+
+function shuffle<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = randomInt(0, i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 /** Generate 6 answer choices: correct, swapped, +/-1 hour variants, plus random fill. */
 export function generateOptions(): TimeOption[] {
   const { targetHours: h, targetMinutes: m } = state;
@@ -34,32 +68,5 @@ export function generateOptions(): TimeOption[] {
     makeOption(wrapHour(swapped.h - 1), swapped.m),
   ];
 
-  // Deduplicate by label
-  const seen = new Set<string>();
-  const unique: TimeOption[] = [];
-  for (const opt of candidates) {
-    if (!seen.has(opt.label)) {
-      seen.add(opt.label);
-      unique.push(opt);
-    }
-  }
-
-  // Fill remaining slots with random times
-  while (unique.length < RULES.optionCount) {
-    const rh = randomInt(1, 13);
-    const rm = randomInt(0, 12) * 5;
-    const rl = formatTime(rh, rm);
-    if (!seen.has(rl)) {
-      seen.add(rl);
-      unique.push(makeOption(rh, rm));
-    }
-  }
-
-  // Fisher-Yates shuffle
-  for (let i = unique.length - 1; i > 0; i--) {
-    const j = randomInt(0, i + 1);
-    [unique[i], unique[j]] = [unique[j], unique[i]];
-  }
-
-  return unique;
+  return shuffle(fillWithRandomTimes(deduplicateByLabel(candidates)));
 }

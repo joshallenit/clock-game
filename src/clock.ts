@@ -3,15 +3,20 @@ import { CLOCK, ANIM } from "./constants";
 import { COLORS } from "./colors";
 import { dom } from "./dom";
 import { state } from "./state";
-import { setupHiDPICanvas, formatTime } from "./utils";
+import { setupHiDPICanvas, formatTime, hourHandAngle, minuteHandAngle } from "./utils";
 import { shouldShowHourNumber } from "./difficulty";
 import { runFrameLoop, cancelAnimation } from "./animation";
 import type { AnimRef } from "./types";
 
-const ctx = setupHiDPICanvas(dom.clock, CLOCK.size, CLOCK.size);
+let ctx: CanvasRenderingContext2D;
 
 // Rendering-only animation ref (not in state.ts because it doesn't affect game logic)
 const spinRef: AnimRef = { id: null };
+
+/** Set up the clock canvas context. Must be called after initDom(). */
+export function initClock(): void {
+  ctx = setupHiDPICanvas(dom.clock, CLOCK.size, CLOCK.size);
+}
 
 function updateClockAriaLabel(h: number, m: number): void {
   dom.clock.setAttribute("aria-label", `Analog clock showing ${formatTime(h, m)}`);
@@ -112,15 +117,8 @@ function drawCenterDot(): void {
 
 export function drawClockAt(h: number, m: number): void {
   drawClockFace();
-  const hourAngle = (((h % 12) + m / 60) * Math.PI) / 6 - Math.PI / 2;
-  drawHand(hourAngle, CLOCK.radius * CLOCK.hourHand.lengthRatio, CLOCK.hourHand.width, COLORS.text);
-  const minuteAngle = (m * Math.PI) / 30 - Math.PI / 2;
-  drawHand(
-    minuteAngle,
-    CLOCK.radius * CLOCK.minuteHand.lengthRatio,
-    CLOCK.minuteHand.width,
-    COLORS.accent,
-  );
+  drawHand(hourHandAngle(h, m), CLOCK.radius * CLOCK.hourHand.lengthRatio, CLOCK.hourHand.width, COLORS.text);
+  drawHand(minuteHandAngle(m), CLOCK.radius * CLOCK.minuteHand.lengthRatio, CLOCK.minuteHand.width, COLORS.accent);
   drawCenterDot();
   updateClockAriaLabel(h, m);
 }
@@ -129,8 +127,8 @@ export function drawClockAt(h: number, m: number): void {
 export function animateToTime(h: number, m: number, onComplete: () => void): void {
   const startMinAngle = Math.random() * Math.PI * 2;
   const startHourAngle = Math.random() * Math.PI * 2;
-  const targetMinAngle = (m * Math.PI) / 30 - Math.PI / 2;
-  const targetHourAngle = (((h % 12) + m / 60) * Math.PI) / 6 - Math.PI / 2;
+  const targetMinAngle = minuteHandAngle(m);
+  const targetHourAngle = hourHandAngle(h, m);
 
   let endMinAngle = targetMinAngle + Math.PI * 8;
   while (endMinAngle < startMinAngle) endMinAngle += Math.PI * 2;
@@ -138,9 +136,9 @@ export function animateToTime(h: number, m: number, onComplete: () => void): voi
   while (endHourAngle < startHourAngle) endHourAngle += Math.PI * 2;
 
   runFrameLoop(
-    ANIM.spinFrames,
+    ANIM.spinDurationMs,
     spinRef,
-    (_frame, t) => {
+    (_elapsed, t) => {
       const ease = 1 - Math.pow(1 - t, 5);
 
       const currentMin = startMinAngle + (endMinAngle - startMinAngle) * ease;

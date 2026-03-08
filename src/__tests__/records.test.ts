@@ -41,4 +41,13 @@ describe("records", () => {
     // corrupt key should be removed
     expect(localStorage.getItem(getTodayKey())).toBeNull();
   });
+
+  it("handles wrong-shape localStorage data gracefully", async () => {
+    // Valid JSON but not a DailyRecord shape
+    localStorage.setItem(getTodayKey(), JSON.stringify({ wrong: "shape" }));
+    const { isNewRecord } = await import("../records");
+    expect(isNewRecord(50000)).toBe(true);
+    // invalid record should be removed
+    expect(localStorage.getItem(getTodayKey())).toBeNull();
+  });
 });

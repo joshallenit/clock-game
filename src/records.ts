@@ -11,12 +11,26 @@ function getTodayKey(): string {
   return `clockRecord_${d.getFullYear()}-${month}-${day}`;
 }
 
+function isValidRecord(data: unknown): data is DailyRecord {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    typeof (data as DailyRecord).time === "number" &&
+    typeof (data as DailyRecord).name === "string"
+  );
+}
+
 function loadRecord(): DailyRecord | null {
   const key = getTodayKey();
   try {
     const data = localStorage.getItem(key);
     if (!data) return null;
-    return JSON.parse(data) as DailyRecord;
+    const parsed: unknown = JSON.parse(data);
+    if (!isValidRecord(parsed)) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return parsed;
   } catch {
     try {
       localStorage.removeItem(key);
@@ -71,7 +85,10 @@ function cleanupOldRecords(): void {
   }
 }
 
-cleanupOldRecords();
+/** Clean up old records. Call once at startup. */
+export function initRecords(): void {
+  cleanupOldRecords();
+}
 
 export function promptForName(finishMs: number): void {
   dom.newRecordTime.textContent = formatElapsed(finishMs);

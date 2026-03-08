@@ -13,8 +13,11 @@ import { playCorrectSound, playIncorrectSound, playWhineSound, ensureAudioContex
 import { updateRecordBanner } from "./records";
 import { updateElapsedDisplay, stopElapsedTimer, startRoundTimer, stopRoundTimer, setupTimerListeners } from "./timer";
 import { showWinScreen, showLoseScreen, stopScreenEffects } from "./screens";
-import { setFeedback, updateMistakesDisplay, CHECK, CROSS } from "./feedback";
+import { setFeedback, updateMistakesDisplay } from "./feedback";
 import { parseTimeInput } from "./input";
+
+const CHECK = "\u2714";
+const CROSS = "\u2718";
 
 // --- Options panel ---
 
