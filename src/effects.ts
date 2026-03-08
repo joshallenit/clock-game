@@ -99,7 +99,15 @@ function runParticleLoop<P>(animKey: AnimKey, config: {
 
 // --- Confetti burst from screen center ---
 
+function cancelFx(animKey: AnimKey): void {
+  if (fxState[animKey] !== null) {
+    cancelAnimationFrame(fxState[animKey]);
+    fxState[animKey] = null;
+  }
+}
+
 export function launchConfetti(): void {
+  cancelFx("rainAnim");
   const cx = fxState.logicalWidth / 2;
   const cy = fxState.logicalHeight / 2;
 
@@ -146,6 +154,7 @@ export function launchConfetti(): void {
 // --- Sad rain with screen shake ---
 
 export function launchRain(): void {
+  cancelFx("confettiAnim");
   resizeCanvas();
 
   const cw = fxState.logicalWidth;

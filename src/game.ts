@@ -165,6 +165,7 @@ function handleTimeout(): void {
 
 function handleOptionClick(label: string, btn: HTMLButtonElement): void {
   if (state.transitioning) return;
+  if (state.targetHours === 0 || !state.correctLabel) return;
   if (label === state.correctLabel) {
     handleCorrect(btn);
   } else {
@@ -176,6 +177,7 @@ function handleOptionClick(label: string, btn: HTMLButtonElement): void {
 
 function checkAnswer(): void {
   if (state.transitioning) return;
+  if (state.targetHours === 0 || !state.correctLabel) return;
 
   const parsed = parseTimeInput(dom.answer.value.trim());
   if (!parsed) {

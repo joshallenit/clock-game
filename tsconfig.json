@@ -11,5 +11,6 @@
     "sourceMap": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"]
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/__tests__"]
 }

@@ -21,7 +21,7 @@ interface ColorPalette {
   rainOverlay: string;
 }
 
-const DARK_PALETTE: ColorPalette = {
+export const DARK_PALETTE: ColorPalette = {
   background: "#1a1a2e",
   panel: "#16213e",
   text: "#e2e2e2",
@@ -41,7 +41,7 @@ const DARK_PALETTE: ColorPalette = {
   rainOverlay: "10, 10, 30",
 };
 
-const LIGHT_PALETTE: ColorPalette = {
+export const LIGHT_PALETTE: ColorPalette = {
   background: "#f5f7fa",
   panel: "#ffffff",
   text: "#1e293b",

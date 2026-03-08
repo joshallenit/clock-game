@@ -6,6 +6,16 @@ function getEl<T extends HTMLElement>(id: string): T {
   return el as T;
 }
 
+const knownKeys: Record<string, true> = {
+  clock: true, confettiCanvas: true, answer: true, submitBtn: true,
+  score: true, feedback: true, timer: true, mistakes: true,
+  optionsPanel: true, elapsed: true, recordBanner: true,
+  nameModal: true, nameInput: true, nameSubmitBtn: true,
+  newRecordTime: true, gameArea: true, winScreen: true,
+  loseScreen: true, playAgainBtn: true, tryAgainBtn: true,
+  finalScoreValue: true,
+};
+
 let initialized = false;
 
 /** DOM refs are populated by initDom(). Accessing before init throws at the call site. */
@@ -16,6 +26,9 @@ export const dom: DomRefs = new Proxy({} as DomRefs, {
   },
   set(target, prop, value, receiver) {
     if (!initialized) throw new Error(`DOM not initialized: cannot set dom.${String(prop)} before initDom()`);
+    if (typeof prop === "string" && !(prop in knownKeys)) {
+      throw new Error(`Unknown DOM ref: dom.${prop}`);
+    }
     return Reflect.set(target, prop, value, receiver);
   },
 });
