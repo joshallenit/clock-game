@@ -7,7 +7,7 @@ import { formatTime } from "./utils.js";
 import { drawClockAt, drawClockFace, drawHand, drawCenterDot } from "./clock.js";
 import { generateOptions } from "./options.js";
 import { launchConfetti, launchRain } from "./effects.js";
-import { launchDog, launchSadDog } from "./dog.js";
+import { launchDog, launchDogReverse, launchDogApproach, launchSadDog } from "./dog.js";
 import { playCorrectSound, playIncorrectSound, playWhineSound, playGameOverSound } from "./audio.js";
 import { isNewRecord, promptForName, updateRecordBanner } from "./records.js";
 
@@ -191,7 +191,9 @@ function lockControls() {
 function transitionToNextRound() {
   lockControls();
   pickRandomTime();
-  launchDog(() => spinHandsToTarget(unlockControls));
+  const dogAnims = [launchDog, launchDogReverse, launchDogApproach];
+  const dogAnim = dogAnims[Math.floor(Math.random() * dogAnims.length)];
+  dogAnim(() => spinHandsToTarget(unlockControls));
 }
 
 function sadDogTransition() {
